@@ -1,6 +1,5 @@
 // harness, runs the engine + jff parser against fixture automata and synthetic edge cases
 // run with: node tests/harness.mjs  (or bun tests/harness.mjs)
-//
 
 import { readFileSync } from "fs";
 import { DOMParser } from "linkedom";
@@ -27,7 +26,8 @@ function test(name, fn) {
 const fixture = (name) => parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8"));
 
 // expected accept/reject values are measured ground truth for these automata,
-// via digit-sum parity (3 = 1 mod 2), so "12" accepts and "101" rejects
+// Item3 in particular accepts odd base-3 numbers via digit-sum parity
+// (3 = 1 mod 2), so "12" accepts and "101" rejects
 const specs = [
   ["item1.jff", "even x's and y's", [["", true], ["x", false], ["xx", true], ["xy", false], ["yyyy", true], ["yxyx", true]]],
   ["item2.jff", "contains aa and bb", [["aabb", true], ["bbaa", true], ["aa", false], ["bb", false], ["ababa", false], ["ababb", false], ["bba", false]]],

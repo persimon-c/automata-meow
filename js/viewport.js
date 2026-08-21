@@ -19,7 +19,6 @@ export function toCanvas(vp, sx, sy) {
 export function applyPinch(vp, prevMid, prevDist, curMid, curDist) {
   const k = prevDist > 0 ? curDist / prevDist : 1;
   const ns = Math.min(6, Math.max(0.2, vp.scale * k));
-  const realK = ns / vp.scale;
   // keep the grabbed canvas point fixed under the moving midpoint
   const cx = (prevMid.x - vp.tx) / vp.scale;
   const cy = (prevMid.y - vp.ty) / vp.scale;

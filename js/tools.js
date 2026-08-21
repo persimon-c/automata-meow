@@ -1,9 +1,7 @@
 // tool implementations, each tool interprets pointer events in canvas space
 // a tool never touches the viewport, and the editor never interprets gestures itself
 
-import { addState, addTransition, deleteState, deleteTransitionAt, findState, toggleInitial, toggleFinal } from "./model.js";
-
-const DRAG_THRESHOLD = 8; // screen px, below this a gesture counts as a tap
+import { addState, deleteState, deleteTransitionAt, findState, toggleInitial, toggleFinal } from "./model.js";
 
 export function createTools() {
   return {

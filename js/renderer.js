@@ -52,8 +52,8 @@ export function render(svg, auto, opts) {
   if (preview) svg.appendChild(preview);
   const defs = el("defs");
   defs.innerHTML =
-    '<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
-    '<path d="M 0 0 L 10 5 L 0 10 z" fill="#e8e8e8"></path></marker>';
+    "<marker id=\"arrow\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\">" +
+    "<path d=\"M 0 0 L 10 5 L 0 10 z\" fill=\"#e8e8e8\"></path></marker>";
   const root = el("g");
   root.setAttribute("id", "world");
   const edges = el("g");
@@ -171,15 +171,6 @@ function sampleQuad(p1, c, p2) {
   return pts;
 }
 
-function sampleArc(center, r, a1, a2) {
-  const pts = [];
-  for (let i = 0; i <= 12; i++) {
-    const a = a1 + ((a2 - a1) * i) / 12;
-    pts.push({ x: center.x + r * Math.cos(a), y: center.y + r * Math.sin(a) });
-  }
-  return pts;
-}
-
 function drawEdge(layer, geom, tid, isActive) {
   // wide invisible stroke is the real tap target, thin visible line would be brutal on a phone
   const hit = el("path");
@@ -263,15 +254,6 @@ function drawState(layer, s, opts) {
   name.textContent = s.name;
   g.appendChild(name);
   layer.appendChild(g);
-}
-
-// attach symbol text to an already created edge group, used during render pass
-export function decorateEdges(svg, auto) {
-  svg.querySelectorAll("text").forEach(t => t.remove());
-  const edgeLayer = svg._root.firstChild;
-  auto.transitions.forEach((t, tid) => {
-    // find matching geometry by re-deriving it, cheap at this scale
-  });
 }
 
 // hit tests work in canvas space against sampled geometry, tolerance is screen px converted to canvas units

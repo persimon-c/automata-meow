@@ -2,7 +2,7 @@
 // pipeline: pointer event -> canvas coords -> active tool -> model mutation -> render -> autosave
 
 import { toCanvas, createViewport, applyPinch } from "./viewport.js";
-import { hitState, hitEdgeIndex, render, applyViewport } from "./renderer.js";
+import { hitState, hitEdgeIndex, applyViewport } from "./renderer.js";
 import { createTools, moveTool, addTool, linkTool, deleteTool } from "./tools.js";
 
 export function createEditor(svg, auto) {
@@ -74,7 +74,7 @@ export function createEditor(svg, auto) {
 
   svg.addEventListener("pointerdown", e => {
     // capture can throw for synthetic or already-gone pointers, losing the gesture over it is silly
-    try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+    try { svg.setPointerCapture(e.pointerId); } catch {}
     const sp = localPt(e);
     // right-click drag pans the workspace on desktop, independent of the active tool
     if (e.button === 2) {

@@ -1,7 +1,14 @@
-// harness, runs the engine against fixture automata and synthetic edge cases
+// harness, runs the engine + jff parser against fixture automata and synthetic edge cases
 // run with: node tests/harness.mjs  (or bun tests/harness.mjs)
+//
 
+import { readFileSync } from "fs";
+import { DOMParser } from "linkedom";
 import { simulate } from "../js/engine.js";
+import { parse, serialize } from "../js/jff.js";
+
+// jff.js expects a browser-style global DOMParser, linkedom provides one under node
+globalThis.DOMParser = DOMParser;
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -17,121 +24,60 @@ function test(name, fn) {
   }
 }
 
-// fixture automata transcribed for regression coverage (ground truth measured 2026-08-21)
-const item1 = {
-  states: [
-    { id: 0, name: "q0", x: 80, y: 80, initial: true, final: true },
-    { id: 1, name: "q1", x: 240, y: 80, initial: false, final: false },
-    { id: 2, name: "q2", x: 80, y: 240, initial: false, final: false },
-    { id: 3, name: "q3", x: 240, y: 240, initial: false, final: false },
-  ],
-  transitions: [
-    { from: 2, to: 3, read: "x" }, { from: 3, to: 2, read: "x" },
-    { from: 0, to: 1, read: "x" }, { from: 1, to: 0, read: "x" },
-    { from: 1, to: 3, read: "y" }, { from: 3, to: 1, read: "y" },
-    { from: 0, to: 2, read: "y" }, { from: 2, to: 0, read: "y" },
-  ],
-};
+const fixture = (name) => parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8"));
 
-const item2 = {
-  states: [
-    { id: 0, name: "q0", x: 80, y: 80, initial: true, final: false },
-    { id: 1, name: "q1", x: 0, y: 0, initial: false, final: false },
-    { id: 2, name: "q6", x: 0, y: 0, initial: false, final: false },
-    { id: 3, name: "q3", x: 0, y: 0, initial: false, final: false },
-    { id: 4, name: "q2", x: 0, y: 0, initial: false, final: false },
-    { id: 5, name: "q7", x: 0, y: 0, initial: false, final: false },
-    { id: 6, name: "q4", x: 0, y: 0, initial: false, final: false },
-    { id: 7, name: "q5", x: 0, y: 0, initial: false, final: true },
-  ],
-  transitions: [
-    { from: 7, to: 7, read: "a" }, { from: 2, to: 2, read: "a" },
-    { from: 7, to: 7, read: "b" }, { from: 5, to: 5, read: "b" },
-    { from: 5, to: 6, read: "a" }, { from: 0, to: 4, read: "b" },
-    { from: 1, to: 2, read: "a" }, { from: 3, to: 7, read: "b" },
-    { from: 6, to: 5, read: "b" }, { from: 0, to: 1, read: "a" },
-    { from: 6, to: 7, read: "a" }, { from: 1, to: 4, read: "b" },
-    { from: 4, to: 1, read: "a" }, { from: 2, to: 3, read: "b" },
-    { from: 4, to: 5, read: "b" }, { from: 3, to: 2, read: "a" },
-  ],
-};
+// expected accept/reject values are measured ground truth for these automata,
+// via digit-sum parity (3 = 1 mod 2), so "12" accepts and "101" rejects
+const specs = [
+  ["item1.jff", "even x's and y's", [["", true], ["x", false], ["xx", true], ["xy", false], ["yyyy", true], ["yxyx", true]]],
+  ["item2.jff", "contains aa and bb", [["aabb", true], ["bbaa", true], ["aa", false], ["bb", false], ["ababa", false], ["ababb", false], ["bba", false]]],
+  ["item3.jff", "odd base-3 number", [["1", true], ["0", false], ["2", false], ["10", true], ["11", false], ["12", true], ["101", false], ["222", false], ["21", true]]],
+  ["item4.jff", "every ss followed by t+", [["sst", true], ["sstt", true], ["ss", false], ["tss", false], ["s", true], ["ssst", false], ["ttsstt", true]]],
+  ["item5.jff", "divisible by 4 not 8", [["100", true], ["1100", true], ["1000", false], ["0", false], ["00", false], ["000", false], ["0100", true]]],
+];
 
-const item3 = {
-  states: [
-    { id: 0, name: "qeven", x: 80, y: 140, initial: true, final: false },
-    { id: 1, name: "qodd", x: 280, y: 140, initial: false, final: true },
-  ],
-  transitions: [
-    { from: 0, to: 0, read: "0" }, { from: 0, to: 1, read: "1" },
-    { from: 1, to: 1, read: "0" }, { from: 1, to: 0, read: "1" },
-    { from: 0, to: 0, read: "2" }, { from: 1, to: 1, read: "2" },
-  ],
-};
+for (const [file, label, cases] of specs) {
+  test(`${file} ${label}`, () => {
+    const auto = fixture(file);
+    assert(auto.type === "fa", "fixture parses as fa");
+    for (const [input, want] of cases) {
+      assert(simulate(auto, input).accepted === want, `"${input}" should ${want ? "accept" : "reject"}`);
+    }
+  });
+}
 
-const item4 = {
-  states: [
-    { id: 0, name: "q0", x: 0, y: 0, initial: true, final: true },
-    { id: 1, name: "q1", x: 0, y: 0, initial: false, final: true },
-    { id: 2, name: "q2", x: 0, y: 0, initial: false, final: false },
-    { id: 3, name: "qX", x: 0, y: 0, initial: false, final: false },
-  ],
-  transitions: [
-    { from: 1, to: 0, read: "t" }, { from: 2, to: 0, read: "t" },
-    { from: 1, to: 2, read: "s" }, { from: 2, to: 3, read: "s" },
-    { from: 3, to: 3, read: "s" }, { from: 0, to: 0, read: "t" },
-    { from: 3, to: 3, read: "t" }, { from: 0, to: 1, read: "s" },
-  ],
-};
-
-const item5 = {
-  states: [
-    { id: 0, name: "q0", x: 0, y: 0, initial: true, final: false },
-    { id: 1, name: "q1", x: 0, y: 0, initial: false, final: false },
-    { id: 2, name: "q2", x: 0, y: 0, initial: false, final: false },
-    { id: 3, name: "q3", x: 0, y: 0, initial: false, final: true },
-  ],
-  transitions: [
-    { from: 0, to: 0, read: "0" }, { from: 1, to: 2, read: "0" },
-    { from: 1, to: 1, read: "1" }, { from: 2, to: 1, read: "1" },
-    { from: 3, to: 0, read: "0" }, { from: 0, to: 1, read: "1" },
-    { from: 3, to: 1, read: "1" }, { from: 2, to: 3, read: "0" },
-  ],
-};
-
-test("Item1 even x/y", () => {
-  assert(simulate(item1, "").accepted === true, '"" should accept');
-  assert(simulate(item1, "xx").accepted === true, '"xx"');
-  assert(simulate(item1, "x").accepted === false, '"x"');
-  assert(simulate(item1, "xy").accepted === false, '"xy"');
+test("fixtures round-trip stable (parse > serialize > parse)", () => {
+  for (let n = 1; n <= 5; n++) {
+    const name = `item${n}.jff`;
+    const once = fixture(name);
+    const twice = parse(serialize(once));
+    const sameStates = JSON.stringify(once.states) === JSON.stringify(twice.states);
+    const sameTransitions = JSON.stringify(once.transitions) === JSON.stringify(twice.transitions);
+    assert(sameStates && sameTransitions, `${name} drifted on round-trip`);
+  }
 });
 
-test("Item2 contains aa and bb", () => {
-  assert(simulate(item2, "aabb").accepted === true, '"aabb"');
-  assert(simulate(item2, "bbaa").accepted === true, '"bbaa"');
-  assert(simulate(item2, "aa").accepted === false, '"aa"');
-  assert(simulate(item2, "bb").accepted === false, '"bb"');
-  assert(simulate(item2, "ababa").accepted === false, '"ababa"');
+test("id and name stay independent on round-trip", () => {
+  // ids and names are never guaranteed to match in the wild (a scrambled id 7 named q5
+  // and id 5 named q7 is a real pattern) so the format layer must preserve both exactly
+  const scrambled = {
+    states: [
+      { id: 5, name: "q7", x: 80, y: 80, initial: true, final: false },
+      { id: 7, name: "q5", x: 240, y: 80, initial: false, final: true },
+    ],
+    transitions: [{ from: 5, to: 7, read: "a" }],
+  };
+  const back = parse(serialize(scrambled));
+  assert(back.states.find(s => s.id === 7)?.name === "q5", "id 7 must keep name q5");
+  assert(back.states.find(s => s.id === 5)?.name === "q7", "id 5 must keep name q7");
 });
 
-test("Item3 odd base3", () => {
-  assert(simulate(item3, "1").accepted === true, '"1"');
-  assert(simulate(item3, "0").accepted === false, '"0"');
-  assert(simulate(item3, "10").accepted === true, '"10"');
-  assert(simulate(item3, "11").accepted === false, '"11"');
-});
-
-test("Item4 ss -> t+", () => {
-  assert(simulate(item4, "sst").accepted === true, '"sst"');
-  assert(simulate(item4, "ss").accepted === false, '"ss"');
-  assert(simulate(item4, "tss").accepted === false, '"tss"');
-  assert(simulate(item4, "s").accepted === true, '"s"');
-});
-
-test("Item5 div4 not 8", () => {
-  assert(simulate(item5, "100").accepted === true, '"100"');
-  assert(simulate(item5, "1000").accepted === false, '"1000"');
-  assert(simulate(item5, "1100").accepted === true, '"1100"');
-  assert(simulate(item5, "0").accepted === false, '"0"');
+test("pda fixture a^n b^n", () => {
+  const pda = fixture("pda_anbn.jff");
+  assert(pda.type === "pda", "fixture parses as pda");
+  for (const [input, want] of [["ab", true], ["aabb", true], ["aaabbb", true], ["aab", false], ["abb", false], ["b", false], ["", false]]) {
+    assert(simulate(pda, input).accepted === want, `pda "${input}" should ${want ? "accept" : "reject"}`);
+  }
 });
 
 test("empty automaton", () => {
@@ -163,5 +109,5 @@ test("epsilon cycle does not loop forever", () => {
       { from: 1, to: 0, read: "" },
     ],
   };
-  assert(simulate(cyc, "").accepted === true, 'cycle ""');
+  assert(simulate(cyc, "").accepted === true, "epsilon cycle terminates");
 });

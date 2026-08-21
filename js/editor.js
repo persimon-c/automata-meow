@@ -29,6 +29,10 @@ export function createEditor(svg, auto) {
   let pinch = null;   // { mid, dist }
   let downPt = null;  // screen coords of the single pointer that started a gesture
   let moved = false;
+  let rightPan = null; // { start, origin: {tx, ty} } for right-click drag panning on desktop
+
+  // right-click context menu would steal the gesture on desktop, suppress it on the canvas
+  svg.addEventListener("contextmenu", e => e.preventDefault());
 
   function localPt(e) {
     // returns {x, y} in screen space, callers all read .x / .y
@@ -40,6 +44,11 @@ export function createEditor(svg, auto) {
     // capture can throw for synthetic or already-gone pointers, losing the gesture over it is silly
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}
     const sp = localPt(e);
+    // right-click drag pans the workspace on desktop, independent of the active tool
+    if (e.button === 2) {
+      rightPan = { start: sp, origin: { tx: vp.tx, ty: vp.ty } };
+      return;
+    }
     pointers.set(e.pointerId, sp);
     if (pointers.size === 2) {
       // second finger cancels any in-progress tool gesture and starts the pinch
@@ -58,6 +67,13 @@ export function createEditor(svg, auto) {
   });
 
   svg.addEventListener("pointermove", e => {
+    if (rightPan) {
+      const sp = localPt(e);
+      vp.tx = rightPan.origin.tx + (sp.x - rightPan.start.x);
+      vp.ty = rightPan.origin.ty + (sp.y - rightPan.start.y);
+      applyViewport(svg, vp);
+      return;
+    }
     if (!pointers.has(e.pointerId)) return;
     const sp = localPt(e);
     pointers.set(e.pointerId, sp);
@@ -76,6 +92,7 @@ export function createEditor(svg, auto) {
   });
 
   function finish(e) {
+    if (e.button === 2) rightPan = null;
     pointers.delete(e.pointerId);
     if (pointers.size < 2) pinch = null;
     if (pointers.size === 0) {

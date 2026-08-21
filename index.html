@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>automata-meow</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- the whole canvas is one svg, everything inside gets re-rendered on change -->
+<svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+
+<!-- symbol input for the transition tool, hidden until a from/to pair is picked -->
+<div id="symbol-pop" class="hidden">
+  <span id="symbol-pair"></span>
+  <input id="symbol-input" autocomplete="off" placeholder="symbol (empty = ε)">
+  <button id="symbol-ok">add</button>
+  <button id="symbol-cancel">cancel</button>
+</div>
+
+<!-- bottom toolbar, thumb reach on a phone -->
+<div id="toolbar">
+  <button data-tool="add" class="active">+ state</button>
+  <button data-tool="move">move</button>
+  <button data-tool="link">+ trans</button>
+  <button data-tool="delete">del</button>
+  <button id="btn-undo">undo</button>
+</div>
+
+<div id="topbar">
+  <label class="btn">import<input id="file-import" type="file" accept=".jff,.jflap,.xml" hidden></label>
+  <button id="btn-export" class="btn">export .jflap</button>
+  <span id="dirty" class="hidden">● unsaved</span>
+</div>
+
+<!-- dev event log, only populated with ?debug in the url -->
+<div id="debug" class="hidden"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

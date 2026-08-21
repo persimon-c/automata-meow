@@ -6,8 +6,8 @@ export function parse(text) {
   if (doc.querySelector("parsererror")) throw new Error("not valid xml");
   const root = doc.querySelector("structure");
   if (!root) throw new Error("no <structure> root, not a jflap file");
-  const type = root.querySelector("type")?.textContent.trim();
-  if (type !== "fa") throw new Error(`unsupported type "${type}", only fa files are supported for now`);
+  const type = root.querySelector("type")?.textContent.trim() || "fa";
+  if (type !== "fa" && type !== "pda") throw new Error(`unsupported type "${type}", only fa and pda are supported for now`);
   const automaton = root.querySelector("automaton");
   if (!automaton) throw new Error("no <automaton> block");
 
@@ -25,21 +25,28 @@ export function parse(text) {
 
   const transitions = [];
   for (const t of automaton.querySelectorAll("transition")) {
-    transitions.push({
+    const base = {
       from: parseInt(t.querySelector("from")?.textContent ?? "-1", 10),
       to: parseInt(t.querySelector("to")?.textContent ?? "-1", 10),
       // empty <read/> means epsilon, kept as the empty string on the model
       read: t.querySelector("read")?.textContent ?? "",
-    });
+    };
+    // pda transitions carry pop and push, fa ones keep them off the object
+    if (type === "pda") {
+      base.pop = t.querySelector("pop")?.textContent ?? "";
+      base.push = t.querySelector("push")?.textContent ?? "";
+    }
+    transitions.push(base);
   }
 
-  return { states, transitions };
+  return { type, states, transitions };
 }
 
 export function serialize(auto) {
+  const type = auto.type || "fa";
   // built by string since xml comments and exact spacing do not need dom ceremony
   let out = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
-  out += '<structure>\n\t<type>fa</type>\n\t<automaton>\n';
+  out += `<structure>\n\t<type>${type}</type>\n\t<automaton>\n`;
   out += '\t\t<!--The list of states.-->\n';
   for (const s of auto.states) {
     out += `\t\t<state id="${s.id}" name="${esc(s.name)}">\n`;
@@ -52,6 +59,10 @@ export function serialize(auto) {
   for (const t of auto.transitions) {
     out += `\t\t<transition>\n`;
     out += `\t\t\t<from>${t.from}</from>\n\t\t\t<to>${t.to}</to>\n\t\t\t<read>${esc(t.read)}</read>\n`;
+    if (auto.type === "pda") {
+      out += `\t\t\t<pop>${esc(t.pop ?? "")}</pop>\n`;
+      out += `\t\t\t<push>${esc(t.push ?? "")}</push>\n`;
+    }
     out += `\t\t</transition>\n`;
   }
   out += '\t</automaton>\n</structure>\n';

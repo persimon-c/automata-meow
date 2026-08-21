@@ -1,9 +1,9 @@
 // automaton model, pure data with zero rendering or dom knowledge
-// shape: { states: [{id, name, x, y, initial, final}], transitions: [{from, to, read}] }
-// ids and names are fully independent, jflap files have scrambled mappings like id 7 = q5
+// shape: { type, states: [{id, name, x, y, initial, final}], transitions: [{from, to, read, pop, push}] }
+// pop and push are only meaningful for pda, empty string means no stack operation
 
-export function createAutomaton() {
-  return { states: [], transitions: [] };
+export function createAutomaton(type = "fa") {
+  return { type, states: [], transitions: [] };
 }
 
 // next free numeric id, derived from existing ids so imports never collide
@@ -37,8 +37,13 @@ export function deleteState(auto, id) {
   auto.transitions = auto.transitions.filter(t => t.from !== id && t.to !== id);
 }
 
-export function addTransition(auto, from, to, read) {
+export function addTransition(auto, from, to, read, pop = "", push = "") {
   const t = { from, to, read };
+  // keep fa files clean, only store stack fields when they carry information
+  if (pop !== "" || push !== "" || auto.type === "pda") {
+    t.pop = pop;
+    t.push = push;
+  }
   auto.transitions.push(t);
   return t;
 }

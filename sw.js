@@ -4,7 +4,7 @@
 // this means shipped-file changes self-heal without touching this file.
 // bump CACHE only when the ASSETS LIST itself changes (files added or removed).
 
-const CACHE = "automata-meow-v21";
+const CACHE = "automata-meow-v22";
 const ASSETS = [
   "./",
   "./index.html",

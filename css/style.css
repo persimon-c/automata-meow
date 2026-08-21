@@ -58,6 +58,7 @@ html, body {
   padding: 8px 10px;
   background: rgba(36, 36, 36, 0.92);
   border-bottom: 1px solid #3a3a3a;
+  flex-wrap: wrap;
 }
 
 .btn {

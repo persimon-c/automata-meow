@@ -38,6 +38,10 @@ CI runs the harness on every push.
 ## Layout
 
 ```text
+index.html      app shell
+manifest.json   PWA manifest, sw.js service worker (offline, root scope)
+assets/icons/   install icons
+css/style.css   styles
 js/model.js     automaton data model, pure data, no DOM
 js/engine.js    FA + PDA simulation, step traces, no DOM
 js/viewport.js  screen <-> canvas coordinate transform (zoom/pan)
@@ -47,6 +51,7 @@ js/editor.js    pointer event pipeline dispatching to the active tool
 js/jff.js       .jff/.jflap XML parser and serializer
 js/undo.js      snapshot undo stack
 js/main.js      wiring, toolbar, persistence
+scripts/        dev tooling (no-cache dev server)
 tests/          harness + fixture automata it runs against
 ```
 

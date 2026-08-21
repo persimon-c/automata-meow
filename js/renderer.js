@@ -6,6 +6,44 @@ import { toCanvas } from "./viewport.js";
 const R = 26; // state circle radius in canvas units
 const EDGE_SPACING = 40; // perpendicular gap between parallel edges
 
+// single source of truth for highlight colors, restyleSim and the draw functions share these
+function edgeStroke(active) {
+  return active ? "#4c8dff" : "#cfcfcf";
+}
+function edgeWidth(active) {
+  return active ? "3.2" : "2";
+}
+function stateFill(active) {
+  return active ? "#1e3a5f" : "#2a2a2a";
+}
+function stateStroke(selected, active) {
+  return active || selected ? "#4c8dff" : "#e8e8e8";
+}
+function stateStrokeWidth(selected, active) {
+  return selected || active ? "3.5" : "2";
+}
+
+// retint existing nodes for a new simulation step without rebuilding the svg,
+// selection styling is recomputed too so the two highlights can never fight
+export function restyleSim(svg, opts) {
+  const via = opts.activeTransitionIds;
+  for (const vis of svg.querySelectorAll(".edge-vis")) {
+    const on = via ? via.has(Number(vis.dataset.tid)) : false;
+    vis.setAttribute("stroke", edgeStroke(on));
+    vis.setAttribute("stroke-width", edgeWidth(on));
+  }
+  for (const g of svg.querySelectorAll(".state")) {
+    const sid = Number(g.dataset.sid);
+    const c = g.querySelector("circle");
+    if (!c) continue;
+    const selected = opts.selectedId === sid || opts.pendingFrom === sid;
+    const active = opts.activeIds ? opts.activeIds.has(sid) : false;
+    c.setAttribute("fill", stateFill(active));
+    c.setAttribute("stroke", stateStroke(selected, active));
+    c.setAttribute("stroke-width", stateStrokeWidth(selected, active));
+  }
+}
+
 // build the full svg content fresh each call, tiny automata make this cheap
 export function render(svg, auto, opts) {
   // keep the link preview line across re-renders, it lives directly under <svg>
@@ -153,11 +191,14 @@ function drawEdge(layer, geom, tid, isActive) {
   hit.classList.add("edge-hit");
   const vis = el("path");
   vis.setAttribute("d", geom.d);
-  vis.setAttribute("stroke", isActive ? "#4c8dff" : "#cfcfcf");
-  vis.setAttribute("stroke-width", isActive ? "3.2" : "2");
+  vis.setAttribute("stroke", edgeStroke(isActive));
+  vis.setAttribute("stroke-width", edgeWidth(isActive));
   vis.setAttribute("fill", "none");
   vis.setAttribute("marker-end", "url(#arrow)");
   vis.setAttribute("pointer-events", "none");
+  // tagged and classed so restyleSim can retint highlights without an svg rebuild
+  vis.dataset.tid = tid;
+  vis.classList.add("edge-vis");
   const label = el("text");
   label.setAttribute("x", geom.label.x);
   label.setAttribute("y", geom.label.y);
@@ -195,10 +236,9 @@ function drawState(layer, s, opts) {
   c.setAttribute("cy", s.y);
   c.setAttribute("r", R);
   // active states during simulation glow blue, selected states get a blue ring
-  const isActive = active;
-  c.setAttribute("fill", isActive ? "#1e3a5f" : "#2a2a2a");
-  c.setAttribute("stroke", isActive ? "#4c8dff" : selected ? "#4c8dff" : "#e8e8e8");
-  c.setAttribute("stroke-width", isActive || selected ? "3.5" : "2");
+  c.setAttribute("fill", stateFill(active));
+  c.setAttribute("stroke", stateStroke(selected, active));
+  c.setAttribute("stroke-width", stateStrokeWidth(selected, active));
   g.appendChild(c);
   if (s.final) {
     // accepting states get the classic double ring

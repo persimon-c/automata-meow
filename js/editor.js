@@ -19,7 +19,7 @@ export function createEditor(svg, auto) {
     pushUndo: null,
     render: null,
     save: null,
-    hitEdge: pt => hitEdgeIndex(svg, vp, pt.sx, pt.sy),
+    hitEdge: pt => hitEdgeIndex(svg, vp, pt.x, pt.y),
     askSymbol: null,
     log: () => {},
   };
@@ -31,8 +31,9 @@ export function createEditor(svg, auto) {
   let moved = false;
 
   function localPt(e) {
+    // returns {x, y} in screen space, callers all read .x / .y
     const r = svg.getBoundingClientRect();
-    return { sx: e.clientX - r.left, sy: e.clientY - r.top };
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
 
   svg.addEventListener("pointerdown", e => {

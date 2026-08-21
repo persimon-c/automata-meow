@@ -4,7 +4,7 @@ import { createAutomaton } from "./model.js";
 import { toggleInitial, toggleFinal } from "./model.js";
 import { render, applyViewport, restyleSim } from "./renderer.js";
 import { createEditor } from "./editor.js";
-import { createUndo, pushUndo, undo } from "./undo.js";
+import { createUndo, pushUndo, undo, redo } from "./undo.js";
 import * as jff from "./jff.js";
 import { simulate } from "./engine.js";
 
@@ -97,6 +97,16 @@ function fullRender() {
   refreshStateActions();
   updateSimBar();
   updateLayout();
+  // undo/redo can restore an older model, so the topbar controls must follow it
+  typeSelect.value = auto.type || "fa";
+  updateInitialStackVisibility();
+  updateHistoryButtons();
+}
+
+// history buttons dim when their stack has nothing to act on
+function updateHistoryButtons() {
+  document.getElementById("btn-undo").disabled = undoStack.stack.length === 0;
+  document.getElementById("btn-redo").disabled = undoStack.redo.length === 0;
 }
 
 // light path for simulation stepping and input edits, retints existing nodes instead of rebuilding
@@ -370,6 +380,14 @@ document.getElementById("btn-undo").addEventListener("click", () => {
     fullRender();
     save();
     log("undo");
+  }
+});
+
+document.getElementById("btn-redo").addEventListener("click", () => {
+  if (redo(undoStack, auto)) {
+    fullRender();
+    save();
+    log("redo");
   }
 });
 

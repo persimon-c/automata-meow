@@ -8,6 +8,40 @@ import { createTools, moveTool, addTool, linkTool, deleteTool } from "./tools.js
 export function createEditor(svg, auto) {
   const vp = createViewport();
   const tools = createTools();
+
+  // rubber-band preview for the link tool, dashed line from from-state to cursor
+  const preview = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  preview.id = "preview-line";
+  preview.setAttribute("stroke", "#4c8dff");
+  preview.setAttribute("stroke-width", "2");
+  preview.setAttribute("stroke-dasharray", "6 4");
+  preview.setAttribute("fill", "none");
+  preview.setAttribute("marker-end", "url(#arrow)");
+  preview.style.display = "none";
+  preview.style.pointerEvents = "none";
+  // preview lives directly under svg so it does not get wiped by renderer re-renders
+  svg.appendChild(preview);
+  function updatePreview(sp) {
+    const dbg = document.getElementById("debug");
+    if (dbg) dbg.textContent = `updPrev pending=${tools.pendingFrom} sp=${Math.round(sp.x)},${Math.round(sp.y)} vp=${vp.tx},${vp.ty}\n` + dbg.textContent;
+    if (tools.pendingFrom === null) {
+      preview.style.display = "none";
+      return;
+    }
+    const from = auto.states.find(s => s.id === tools.pendingFrom);
+    if (!from) { preview.style.display = "none"; return; }
+    const p = toCanvas(vp, sp.x, sp.y);
+    // start at the circle edge, not the center
+    const dx = p.x - from.x, dy = p.y - from.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len, uy = dy / len;
+    const R = 26;
+    const x1 = from.x + ux * R, y1 = from.y + uy * R;
+    preview.setAttribute("d", `M ${x1} ${y1} L ${p.x} ${p.y}`);
+    // keep preview in sync with viewport
+    preview.setAttribute("transform", `translate(${vp.tx},${vp.ty}) scale(${vp.scale})`);
+    preview.style.display = "";
+  }
   const ctx = {
     auto,
     vp,
@@ -64,6 +98,9 @@ export function createEditor(svg, auto) {
     const hit = hitState(auto, vp, sp.x, sp.y);
     ctx.log(`down ${ctx.toolName} screen ${Math.round(sp.x)},${Math.round(sp.y)} canvas ${Math.round(cp.x)},${Math.round(cp.y)} hit ${hit ? hit.name : "none"}`);
     ctx.tool.down(ctx, hit, cp);
+    // show or hide the link preview right after the tool runs
+    if (tools.pendingFrom !== null) updatePreview(sp);
+    else preview.style.display = "none";
   });
 
   svg.addEventListener("pointermove", e => {
@@ -72,6 +109,7 @@ export function createEditor(svg, auto) {
       vp.tx = rightPan.origin.tx + (sp.x - rightPan.start.x);
       vp.ty = rightPan.origin.ty + (sp.y - rightPan.start.y);
       applyViewport(svg, vp);
+      if (tools.pendingFrom !== null) updatePreview(sp);
       return;
     }
     if (!pointers.has(e.pointerId)) return;
@@ -84,11 +122,13 @@ export function createEditor(svg, auto) {
       applyPinch(vp, pinch.mid, pinch.dist, mid, dist);
       pinch = { mid, dist };
       applyViewport(svg, vp);
+      if (tools.pendingFrom !== null) updatePreview(sp);
       return;
     }
     if (moved || (downPt && Math.hypot(sp.x - downPt.x, sp.y - downPt.y) > DRAG)) moved = true;
     const cp = toCanvas(vp, sp.x, sp.y);
     ctx.tool.move(ctx, cp);
+    if (tools.pendingFrom !== null) updatePreview(sp);
   });
 
   function finish(e) {
@@ -111,6 +151,7 @@ export function createEditor(svg, auto) {
     const sp = localPt(e);
     const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
     zoomAt(sp, factor);
+    if (tools.pendingFrom !== null) updatePreview(sp);
   }, { passive: false });
 
   const DRAG = 8;
@@ -137,6 +178,7 @@ export function createEditor(svg, auto) {
       ctx.tool = map[name];
       ctx.toolName = name;
       ctx.tools.pendingFrom = null;
+      preview.style.display = "none";
     },
     zoomAt,
   };

@@ -86,8 +86,11 @@ function edgeGeom(auto, t, index, total) {
   const k = (index - (total - 1) / 2) * (total > 1 ? EDGE_SPACING : 0);
   const c = { x: (p1.x + p2.x) / 2 + nx * k, y: (p1.y + p2.y) / 2 + ny * k };
   const d = `M ${p1.x} ${p1.y} Q ${c.x} ${c.y} ${p2.x} ${p2.y}`;
-  // quadratic bezier midpoint for the label
-  const label = { x: 0.25 * p1.x + 0.5 * c.x + 0.25 * p2.x, y: 0.25 * p1.y + 0.5 * c.y + 0.25 * p2.y };
+  // quadratic bezier midpoint for the label, offset farther from the line so symbols don't sit on it
+  // push the label to the same side the curve bows toward, so it sits outside the arc
+  const mid = { x: 0.25 * p1.x + 0.5 * c.x + 0.25 * p2.x, y: 0.25 * p1.y + 0.5 * c.y + 0.25 * p2.y };
+  const off = k === 0 ? 14 : Math.sign(k) * 14;
+  const label = { x: mid.x + nx * off, y: mid.y + ny * off };
   return { d, label, samples: sampleQuad(p1, c, p2) };
 }
 

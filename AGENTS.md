@@ -34,7 +34,7 @@ The harness runs against fixture files in `tests/fixtures/` (five FA automata pl
 
 ## Service worker
 
-Bump the `CACHE` version string in `sw.js` whenever any shipped file changes (`index.html`, `js/*`, `css/*`, icons). Old caches self-delete on activate. Forgetting the bump ships stale code to phones with heuristically cached responses.
+Stale-while-revalidate: cached copies answer instantly and a background fetch refreshes them, so shipped-file changes self-heal across loads. Bump the `CACHE` version string in `sw.js` **only when the ASSETS list itself changes** (files added or removed) — content edits need no bump. Local development uses `scripts/dev-server.py`, which sends `Cache-Control: no-cache` so browsers never serve stale js during testing.
 
 ## Philosophy
 

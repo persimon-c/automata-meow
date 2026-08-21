@@ -1,7 +1,6 @@
 # Automata Meowbile (?)
 
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/0a199dab-ed61-4d7d-a841-87be7ed701e2" />
-
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c73375f2-4702-4a21-9a98-b53c3e8e9efb" /> 
 
 A touch-first web editor for finite automata and pushdown automata. Built because
 JFLAP is a Java desktop app and every web clone assumes a mouse. Designed to be used

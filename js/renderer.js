@@ -38,8 +38,15 @@ export function render(svg, auto, opts) {
       const geom = entry.t.from === entry.t.to
         ? selfLoopGeom(auto, entry.t, i, list.length)
         : edgeGeom(auto, entry.t, i, list.length);
-      // empty read means epsilon in jflap, shown as the ε glyph
-      geom.symbol = entry.t.read || "ε";
+      // pda labels show read, pop, push together as "a, Z → AZ"
+      if (auto.type === "pda") {
+        const rd = entry.t.read || "ε";
+        const pp = entry.t.pop || "ε";
+        const ps = entry.t.push || "ε";
+        geom.symbol = `${rd}, ${pp} → ${ps}`;
+      } else {
+        geom.symbol = entry.t.read || "ε";
+      }
       geoms[entry.tid] = geom;
       const isActive = opts.activeTransitionIds && opts.activeTransitionIds.has(entry.tid);
       drawEdge(edges, geom, entry.tid, isActive);
@@ -150,7 +157,7 @@ function drawEdge(layer, geom, tid, isActive) {
   label.setAttribute("x", geom.label.x);
   label.setAttribute("y", geom.label.y);
   label.setAttribute("text-anchor", "middle");
-  label.setAttribute("font-size", "15");
+  label.setAttribute("font-size", geom.symbol.includes("→") ? "11" : "15");
   label.setAttribute("fill", "#ffd27f");
   label.setAttribute("pointer-events", "none");
   label.textContent = geom.symbol;

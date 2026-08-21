@@ -1,0 +1,13 @@
+{
+  "name": "automata-meow",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/harness.mjs",
+    "serve": "python3 -m http.server 8123"
+  },
+  "devDependencies": {
+    "eslint": "^10.8.1",
+    "linkedom": "^0.18.13"
+  }
+}

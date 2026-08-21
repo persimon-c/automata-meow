@@ -67,7 +67,8 @@ function fullRender() {
     sim.pos = keptPos < 0 ? 0 : keptPos;
   }
   const activeIds = sim ? sim.steps[sim.pos]?.active : null;
-  render(svg, auto, { selectedId: editor.ctx.selectedId, pendingFrom: editor.ctx.tools.pendingFrom, activeIds });
+  const activeTransitionIds = sim ? sim.steps[sim.pos]?.via : null;
+  render(svg, auto, { selectedId: editor.ctx.selectedId, pendingFrom: editor.ctx.tools.pendingFrom, activeIds, activeTransitionIds });
   applyViewport(svg, editor.ctx.vp);
   refreshStateActions();
   if (sim) updateSimBar();

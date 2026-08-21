@@ -1,7 +1,7 @@
 // offline cache for lecture use, cache-first since the app is fully static
 // bump the cache version whenever shipped files change, old caches get deleted on activate
 
-const CACHE = "automata-meow-v10";
+const CACHE = "automata-meow-v11";
 const ASSETS = [
   "./",
   "./index.html",

@@ -41,7 +41,8 @@ export function render(svg, auto, opts) {
       // empty read means epsilon in jflap, shown as the ε glyph
       geom.symbol = entry.t.read || "ε";
       geoms[entry.tid] = geom;
-      drawEdge(edges, geom, entry.tid);
+      const isActive = opts.activeTransitionIds && opts.activeTransitionIds.has(entry.tid);
+      drawEdge(edges, geom, entry.tid, isActive);
     });
   }
   // sampled geometry is kept for hit testing, samples live in canvas space
@@ -129,7 +130,7 @@ function sampleArc(center, r, a1, a2) {
   return pts;
 }
 
-function drawEdge(layer, geom, tid) {
+function drawEdge(layer, geom, tid, isActive) {
   // wide invisible stroke is the real tap target, thin visible line would be brutal on a phone
   const hit = el("path");
   hit.setAttribute("d", geom.d);
@@ -140,8 +141,8 @@ function drawEdge(layer, geom, tid) {
   hit.classList.add("edge-hit");
   const vis = el("path");
   vis.setAttribute("d", geom.d);
-  vis.setAttribute("stroke", "#cfcfcf");
-  vis.setAttribute("stroke-width", "2");
+  vis.setAttribute("stroke", isActive ? "#4c8dff" : "#cfcfcf");
+  vis.setAttribute("stroke-width", isActive ? "3.2" : "2");
   vis.setAttribute("fill", "none");
   vis.setAttribute("marker-end", "url(#arrow)");
   vis.setAttribute("pointer-events", "none");

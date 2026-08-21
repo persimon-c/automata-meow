@@ -18,32 +18,35 @@ export function epsilonClosure(auto, stateSet) {
   return closure;
 }
 
-// one step on a single character from a set of active states
+// one step on a single character from a set of active states, also returns which transitions were taken
 export function move(auto, activeSet, ch) {
   const next = new Set();
-  for (const sid of activeSet) {
-    for (const t of auto.transitions) {
-      if (t.from === sid && t.read === ch) next.add(t.to);
+  const via = new Set();
+  auto.transitions.forEach((t, idx) => {
+    if (activeSet.has(t.from) && t.read === ch) {
+      next.add(t.to);
+      via.add(idx);
     }
-  }
-  return next;
+  });
+  return { next, via };
 }
 
 // full trace for an input string, returns the active set after each position
 // steps[0] is before any input, steps[i] is after consuming input[0..i-1]
+// each step after the first also carries via, the set of transition indices taken on that character
 export function simulate(auto, input) {
   const initials = auto.states.filter(s => s.initial).map(s => s.id);
   let cur = epsilonClosure(auto, new Set(initials));
-  const steps = [{ pos: 0, active: new Set(cur) }];
+  const steps = [{ pos: 0, active: new Set(cur), via: new Set() }];
   for (let i = 0; i < input.length; i++) {
     const ch = input[i];
-    const moved = move(auto, cur, ch);
-    cur = epsilonClosure(auto, moved);
-    steps.push({ pos: i + 1, active: new Set(cur), char: ch });
+    const { next, via } = move(auto, cur, ch);
+    cur = epsilonClosure(auto, next);
+    steps.push({ pos: i + 1, active: new Set(cur), via: new Set(via), char: ch });
     // early stop when dead, remaining steps will stay empty
     if (cur.size === 0) {
       for (let j = i + 1; j < input.length; j++) {
-        steps.push({ pos: j + 1, active: new Set(), char: input[j] });
+        steps.push({ pos: j + 1, active: new Set(), via: new Set(), char: input[j] });
       }
       break;
     }

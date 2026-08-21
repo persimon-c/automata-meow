@@ -2,7 +2,7 @@
 
 import { createAutomaton } from "./model.js";
 import { toggleInitial, toggleFinal } from "./model.js";
-import { render, applyViewport } from "./renderer.js";
+import { render, applyViewport, restyleSim } from "./renderer.js";
 import { createEditor } from "./editor.js";
 import { createUndo, pushUndo, undo } from "./undo.js";
 import * as jff from "./jff.js";
@@ -56,23 +56,53 @@ function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(auto));
 }
 
+// coalesce render requests into one per animation frame, drag moves fire far faster than screens paint
+let renderPending = false;
+function scheduleRender() {
+  if (renderPending) return;
+  renderPending = true;
+  requestAnimationFrame(() => {
+    renderPending = false;
+    fullRender();
+    markDirty();
+  });
+}
+
+// re-run the simulation against the current automaton and input string, clamping the step position
+function refreshSim() {
+  if (!sim) return;
+  const result = simulate(auto, simInputEl.value);
+  const keptPos = Math.min(sim.pos, result.steps.length - 1);
+  sim.steps = result.steps;
+  sim.accepted = result.accepted;
+  sim.input = simInputEl.value;
+  sim.pos = keptPos < 0 ? 0 : keptPos;
+}
+
+// highlight opts derived from the current editor + sim state, shared by render paths
+function displayOpts() {
+  const step = sim ? sim.steps[sim.pos] : null;
+  return {
+    selectedId: editor.ctx.selectedId,
+    pendingFrom: editor.ctx.tools.pendingFrom,
+    activeIds: step ? step.active : null,
+    activeTransitionIds: step ? step.via : null,
+  };
+}
+
 function fullRender() {
-  // keep simulation in sync with the current automaton and input string
-  if (sim) {
-    const result = simulate(auto, simInputEl.value);
-    const keptPos = Math.min(sim.pos, result.steps.length - 1);
-    sim.steps = result.steps;
-    sim.accepted = result.accepted;
-    sim.input = simInputEl.value;
-    sim.pos = keptPos < 0 ? 0 : keptPos;
-  }
-  const activeIds = sim ? sim.steps[sim.pos]?.active : null;
-  const activeTransitionIds = sim ? sim.steps[sim.pos]?.via : null;
-  render(svg, auto, { selectedId: editor.ctx.selectedId, pendingFrom: editor.ctx.tools.pendingFrom, activeIds, activeTransitionIds });
+  refreshSim();
+  render(svg, auto, displayOpts());
   applyViewport(svg, editor.ctx.vp);
   refreshStateActions();
-  if (sim) updateSimBar();
+  updateSimBar();
   updateLayout();
+}
+
+// light path for simulation stepping and input edits, retints existing nodes instead of rebuilding
+function updateSimDisplay() {
+  restyleSim(svg, displayOpts());
+  updateSimBar();
 }
 
 function updateLayout() {
@@ -155,7 +185,7 @@ function closeRename(commit) {
 const editor = createEditor(svg, auto);
 
 editor.ctx.pushUndo = () => pushUndo(undoStack, auto);
-editor.ctx.render = () => { fullRender(); markDirty(); };
+editor.ctx.render = () => scheduleRender();
 editor.ctx.markDirty = markDirty;
 editor.ctx.save = save;
 editor.ctx.log = log;
@@ -244,20 +274,19 @@ simBtn.addEventListener("click", () => {
 
 simInputEl.addEventListener("input", () => {
   if (!sim) return;
-  const result = simulate(auto, simInputEl.value);
-  sim = { input: simInputEl.value, steps: result.steps, pos: result.steps.length - 1, accepted: result.accepted };
-  fullRender();
+  refreshSim();
+  updateSimDisplay();
 });
 
 document.getElementById("sim-prev").addEventListener("click", () => {
   if (!sim || sim.pos <= 0) return;
   sim.pos--;
-  fullRender();
+  updateSimDisplay();
 });
 document.getElementById("sim-next").addEventListener("click", () => {
   if (!sim || sim.pos >= sim.steps.length - 1) return;
   sim.pos++;
-  fullRender();
+  updateSimDisplay();
 });
 
 // symbol input flow for the link tool, empty input means epsilon
@@ -435,6 +464,10 @@ function exportImage(mime) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
   ctx.scale(scale, scale);
+  // selection rings, pending link highlights, and sim glows must never bake into an export,
+  // so redraw with every interaction highlight off, clone, then put the display state back
+  const savedOpts = displayOpts();
+  render(svg, auto, { selectedId: null, pendingFrom: null, activeIds: null, activeTransitionIds: null });
   const exportSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   exportSvg.setAttribute("width", w);
   exportSvg.setAttribute("height", h);
@@ -445,6 +478,8 @@ function exportImage(mime) {
   defs.querySelectorAll('path[fill="#e8e8e8"]').forEach(p => p.setAttribute("fill", "#222222"));
   exportSvg.appendChild(defs);
   for (const child of svg._root.children) exportSvg.appendChild(child.cloneNode(true));
+  render(svg, auto, savedOpts);
+  applyViewport(svg, editor.ctx.vp);
   // invert the dark-theme colors to dark-on-light for the exported image
   exportSvg.querySelectorAll('circle[fill="#2a2a2a"]').forEach(c => c.setAttribute("fill", "#ffffff"));
   exportSvg.querySelectorAll('circle[stroke="#e8e8e8"], line[stroke="#e8e8e8"]').forEach(el => el.setAttribute("stroke", "#222222"));

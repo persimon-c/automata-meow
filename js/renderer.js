@@ -75,28 +75,34 @@ function edgeGeom(auto, t, index, total) {
   // trim the ends so lines start and stop on the circle boundary, not under it
   const p1 = { x: a.x + ux * R, y: a.y + uy * R };
   const p2 = { x: b.x - ux * R, y: b.y - uy * R };
-  // parallel edges fan out around the straight line, single edges stay straight
+  // parallel edges need opposite bows for opposite directions, so derive the
+  // perpendicular from the canonical ordering of the pair, not the edge direction
+  const minA = pos(auto, Math.min(t.from, t.to));
+  const maxA = pos(auto, Math.max(t.from, t.to));
+  const cdx = maxA.x - minA.x, cdy = maxA.y - minA.y;
+  const clen = Math.hypot(cdx, cdy) || 1;
+  const cux = cdx / clen, cuy = cdy / clen;
+  const nx = -cuy, ny = cux; // canonical perpendicular
   const k = (index - (total - 1) / 2) * (total > 1 ? EDGE_SPACING : 0);
-  const c = { x: (p1.x + p2.x) / 2 - uy * k, y: (p1.y + p2.y) / 2 + ux * k };
+  const c = { x: (p1.x + p2.x) / 2 + nx * k, y: (p1.y + p2.y) / 2 + ny * k };
   const d = `M ${p1.x} ${p1.y} Q ${c.x} ${c.y} ${p2.x} ${p2.y}`;
   // quadratic bezier midpoint for the label
   const label = { x: 0.25 * p1.x + 0.5 * c.x + 0.25 * p2.x, y: 0.25 * p1.y + 0.5 * c.y + 0.25 * p2.y };
   return { d, label, samples: sampleQuad(p1, c, p2) };
 }
 
-// self-loop drawn as an arc over the state, parallel loops fan out by angle
+// self-loop drawn as a loop above the state, parallels fan out sideways
 function selfLoopGeom(auto, t, index, total) {
   const s = pos(auto, t.from);
-  const shift = (index - (total - 1) / 2) * (Math.PI / 180) * 42;
-  const a1 = -Math.PI / 3 + shift;  // start on the upper right of the circle
-  const a2 = -Math.PI + a1;         // end on the upper left, arc goes over the top
-  const p1 = { x: s.x + R * Math.cos(a1), y: s.y + R * Math.sin(a1) };
-  const p2 = { x: s.x + R * Math.cos(a2), y: s.y + R * Math.sin(a2) };
-  const loopR = 0.62 * R;
-  const d = `M ${p1.x} ${p1.y} A ${loopR} ${loopR} 0 0 1 ${p2.x} ${p2.y}`;
-  const midA = (a1 + a2) / 2;
-  const label = { x: s.x + (R + 16) * Math.cos(midA), y: s.y + (R + 16) * Math.sin(midA) };
-  return { d, label, samples: sampleArc(s, R, a1, a2) };
+  // anchor points on the upper rim of the state circle
+  const p1 = { x: s.x + R * 0.71, y: s.y - R * 0.71 };
+  const p2 = { x: s.x - R * 0.71, y: s.y - R * 0.71 };
+  // control point far above the state, shifted sideways for parallel self-loops
+  const shiftX = (index - (total - 1) / 2) * R * 1.4;
+  const c = { x: s.x + shiftX, y: s.y - R * 2.8 };
+  const d = `M ${p1.x} ${p1.y} Q ${c.x} ${c.y} ${p2.x} ${p2.y}`;
+  const label = { x: c.x, y: c.y - 10 };
+  return { d, label, samples: sampleQuad(p1, c, p2) };
 }
 
 function sampleQuad(p1, c, p2) {

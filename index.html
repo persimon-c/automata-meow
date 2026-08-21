@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b1b1b">
+<link rel="manifest" href="manifest.json">
 <title>automata-meow</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -18,6 +20,14 @@
   <button id="symbol-cancel">cancel</button>
 </div>
 
+<!-- state actions, visible while a state is selected in move mode -->
+<div id="state-actions" class="hidden">
+  <span class="label">selected</span>
+  <button id="btn-initial">start</button>
+  <button id="btn-final">final</button>
+  <button id="btn-rename">rename</button>
+</div>
+
 <!-- bottom toolbar, thumb reach on a phone -->
 <div id="toolbar">
   <button data-tool="add" class="active">+ state</button>
@@ -31,6 +41,13 @@
   <label class="btn">import<input id="file-import" type="file" accept=".jff,.jflap,.xml" hidden></label>
   <button id="btn-export" class="btn">export .jflap</button>
   <span id="dirty" class="hidden">● unsaved</span>
+</div>
+
+<!-- rename input for the selected state -->
+<div id="rename-pop" class="hidden">
+  <input id="rename-input" autocomplete="off">
+  <button id="rename-ok">ok</button>
+  <button id="rename-cancel">cancel</button>
 </div>
 
 <!-- dev event log, only populated with ?debug in the url -->

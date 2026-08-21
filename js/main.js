@@ -72,6 +72,33 @@ function fullRender() {
   applyViewport(svg, editor.ctx.vp);
   refreshStateActions();
   if (sim) updateSimBar();
+  updateLayout();
+}
+
+function updateLayout() {
+  const topbar = document.getElementById("topbar");
+  const simBarEl = document.getElementById("sim-bar");
+  if (topbar && simBarEl && !simBarEl.classList.contains("hidden")) {
+    simBarEl.style.top = topbar.offsetHeight + "px";
+  }
+  const emptyHint = document.getElementById("empty-hint");
+  if (emptyHint) emptyHint.classList.toggle("hidden", auto.states.length !== 0);
+}
+
+function updatePopupPositions() {
+  const vv = window.visualViewport;
+  const kbHeight = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+  const bottom = 84 + kbHeight;
+  for (const id of ["symbol-pop", "rename-pop", "state-actions"]) {
+    const el = document.getElementById(id);
+    if (el) el.style.bottom = bottom + "px";
+  }
+}
+
+window.addEventListener("resize", updateLayout);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", updatePopupPositions);
+  window.visualViewport.addEventListener("scroll", updatePopupPositions);
 }
 
 // state actions row, only meaningful while a state is actually selected in move mode

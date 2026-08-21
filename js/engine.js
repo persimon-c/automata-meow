@@ -1,6 +1,63 @@
 // engine, simulates the automaton on an input string, no dom knowledge
 // supports nfa with epsilon moves, missing transitions mean implicit reject
 
+/**
+ * A state of the automaton, coordinates are canvas units owned by the renderer
+ * @typedef {Object} State
+ * @property {number} id        stable identity, independent of name
+ * @property {string} name      display label, never derived from id
+ * @property {number} x
+ * @property {number} y
+ * @property {boolean} initial
+ * @property {boolean} final
+ */
+
+/**
+ * One transition. For FA only `read` is present; PDA transitions add `pop`/`push`
+ * where the empty string means epsilon and push's leftmost char ends up on top
+ * @typedef {Object} Transition
+ * @property {number} from
+ * @property {number} to
+ * @property {string} read   empty string = epsilon
+ * @property {string} [pop]
+ * @property {string} [push]
+ */
+
+/**
+ * The whole automaton model, plain data shared by every module
+ * @typedef {Object} Automaton
+ * @property {"fa"|"pda"} type
+ * @property {string} [initialStack]  pda only, defaults to "Z"
+ * @property {State[]} states
+ * @property {Transition[]} transitions
+ */
+
+/**
+ * One pda configuration in a breadth-first search over (state, stack, input position)
+ * @typedef {Object} PdaConfig
+ * @property {number} state
+ * @property {string[]} stack  index 0 is bottom, last element is top
+ * @property {number} pos
+ */
+
+/**
+ * One step of a trace. FA steps carry active state ids; pda steps additionally
+ * carry the full config list for the stack display. `via` holds the transition
+ * indices taken on the way into this step, for highlight rendering
+ * @typedef {Object} SimStep
+ * @property {number} pos
+ * @property {Set<number>} active
+ * @property {Set<number>} via
+ * @property {string} [char]
+ * @property {PdaConfig[]} [configs]
+ */
+
+/**
+ * @typedef {Object} SimResult
+ * @property {boolean} accepted
+ * @property {SimStep[]} steps  index 0 is the start configuration before any input
+ */
+
 // epsilon closure of a set of state ids, follows empty-read transitions transitively
 // also returns which epsilon transitions were taken, for highlighting
 export function epsilonClosure(auto, stateSet) {

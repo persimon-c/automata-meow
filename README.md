@@ -12,9 +12,8 @@ will be adding turing machines soon, currently lacking knowledge abt that for no
 
 **Live:** <https://persimon-c.github.io/automata-meow/>
 
-Opens and saves `.jff` / `.jflap` files, the same XML format JFLAP uses for real
-coursework submissions, and can also export the canvas as a **PNG** or **JPEG**
-image for slides or reports.
+Opens and saves `.jff` / `.jflap` files (JFLAP's XML format), and can also export
+the canvas as a **PNG** or **JPEG** image for slides or reports.
 
 ## Use it
 
@@ -25,25 +24,30 @@ pinch-zoom and pan in any mode.
 
 ## Contribute
 
-No build step, no dependencies.
+No build step, no runtime dependencies.
 
 ```bash
-python3 -m http.server 8123
-# open http://localhost:8123
+npm install          # dev dependencies only (test harness + lint)
+npm test             # engine + file-format harness
+npm run serve        # no-cache dev server on http://localhost:8123
 ```
 
 Add `?debug` to the URL for the on-screen event log. Roadmap: FA → PDA/CFG → Turing machines.
+CI runs the harness on every push.
 
 ## Layout
 
 ```text
 js/model.js     automaton data model, pure data, no DOM
+js/engine.js    FA + PDA simulation, step traces, no DOM
 js/viewport.js  screen <-> canvas coordinate transform (zoom/pan)
 js/renderer.js  draws the model as SVG, derives all edge geometry
 js/tools.js     per-tool interpretation of taps and drags
 js/editor.js    pointer event pipeline dispatching to the active tool
 js/jff.js       .jff/.jflap XML parser and serializer
+js/undo.js      snapshot undo stack
 js/main.js      wiring, toolbar, persistence
+tests/          harness + fixture automata it runs against
 ```
 
 ## License

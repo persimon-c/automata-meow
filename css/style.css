@@ -188,6 +188,31 @@ html, body {
 
 #sim-status.accept { color: #6fdc6f; font-weight: bold; }
 #sim-status.reject { color: #ff6b6b; font-weight: bold; }
+#sim-stack { font-family: monospace; font-size: 12px; color: #9a9a9a; }
+
+#automaton-type {
+  font-size: 14px;
+  padding: 6px;
+  background: #333;
+  color: #e8e8e8;
+  border: 1px solid #4a4a4a;
+  border-radius: 6px;
+}
+
+#symbol-pda {
+  display: flex;
+  gap: 4px;
+}
+
+#symbol-pda input {
+  width: 70px;
+  font-size: 14px;
+  padding: 6px;
+  background: #1b1b1b;
+  color: #e8e8e8;
+  border: 1px solid #4a4a4a;
+  border-radius: 6px;
+}
 
 #btn-sim.active {
   background: #1e3a5f;

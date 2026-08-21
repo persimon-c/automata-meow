@@ -17,7 +17,14 @@ const dirtyEl = document.getElementById("dirty");
 let auto = createAutomaton();
 try {
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) auto = JSON.parse(saved);
+  if (saved) {
+    auto = JSON.parse(saved);
+    // drop any states corrupted by the earlier localPt bug, they render at NaN and clutter storage
+    const before = auto.states.length;
+    auto.states = auto.states.filter(s => Number.isFinite(s.x) && Number.isFinite(s.y));
+    auto.transitions = auto.transitions.filter(t => auto.states.some(s => s.id === t.from) && auto.states.some(s => s.id === t.to));
+    if (auto.states.length !== before) localStorage.setItem(STORAGE_KEY, JSON.stringify(auto));
+  }
 } catch (err) {
   console.warn("autosave was corrupt, starting fresh", err);
 }

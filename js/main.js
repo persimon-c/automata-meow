@@ -256,9 +256,13 @@ function exportImage(mime) {
   canvas.width = w * scale;
   canvas.height = h * scale;
   const ctx = canvas.getContext("2d");
-  // white for JPEG since it has no transparency, dark to match the app for PNG
-  ctx.fillStyle = mime === "image/jpeg" ? "#ffffff" : "#1b1b1b";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // JPEG gets a white page, PNG stays transparent so it works on any background
+  if (mime === "image/jpeg") {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
   ctx.scale(scale, scale);
   const exportSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   exportSvg.setAttribute("width", w);
@@ -266,8 +270,16 @@ function exportImage(mime) {
   exportSvg.setAttribute("viewBox", `${x} ${y} ${w} ${h}`);
   exportSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   const defs = svg.querySelector("defs").cloneNode(true);
+  // marker arrow is light in the app, needs to be dark on a light/transparent export
+  defs.querySelectorAll('path[fill="#e8e8e8"]').forEach(p => p.setAttribute("fill", "#222222"));
   exportSvg.appendChild(defs);
   for (const child of svg._root.children) exportSvg.appendChild(child.cloneNode(true));
+  // invert the dark-theme colors to dark-on-light for the exported image
+  exportSvg.querySelectorAll('circle[fill="#2a2a2a"]').forEach(c => c.setAttribute("fill", "#ffffff"));
+  exportSvg.querySelectorAll('circle[stroke="#e8e8e8"], line[stroke="#e8e8e8"]').forEach(el => el.setAttribute("stroke", "#222222"));
+  exportSvg.querySelectorAll('path[stroke="#cfcfcf"]').forEach(p => p.setAttribute("stroke", "#222222"));
+  exportSvg.querySelectorAll('text[fill="#e8e8e8"]').forEach(t => t.setAttribute("fill", "#111111"));
+  exportSvg.querySelectorAll('text[fill="#ffd27f"]').forEach(t => t.setAttribute("fill", "#8a5a00"));
   const svgStr = new XMLSerializer().serializeToString(exportSvg);
   const blob = new Blob([svgStr], { type: "image/svg+xml" });
   const url = URL.createObjectURL(blob);

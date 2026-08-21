@@ -2,10 +2,13 @@
 
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/0a199dab-ed61-4d7d-a841-87be7ed701e2" />
 
+
 A touch-first web editor for finite automata and pushdown automata. Built because
 JFLAP is a Java desktop app and every web clone assumes a mouse. Designed to be used
 on a phone, during an actual lecture, on spotty wifi. Whether you're drawing
 automata on the bus to class or presenting from a laptop, it works the same way.
+
+will be adding turing machines soon, currently lacking knowledge abt that for now :3
 
 **Live:** <https://persimon-c.github.io/automata-meow/>
 

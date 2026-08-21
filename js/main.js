@@ -203,10 +203,12 @@ document.getElementById("file-import").addEventListener("change", async e => {
   e.target.value = "";
 });
 
-// export downloads the chosen filename, plus share sheet on mobile when available
+// export handles all four extensions from the single dropdown, image exports go through the canvas path
 document.getElementById("btn-export").addEventListener("click", async () => {
-  const name = document.getElementById("export-name").value.trim() || "automaton";
   const ext = document.getElementById("export-ext").value || ".jflap";
+  if (ext === ".png") { exportImage("image/png"); return; }
+  if (ext === ".jpg") { exportImage("image/jpeg"); return; }
+  const name = document.getElementById("export-name").value.trim() || "automaton";
   const filename = name + ext;
   const blob = new Blob([jff.serialize(auto)], { type: "application/xml" });
   // prefer the share sheet on phones when the browser can share files, falls back to download
@@ -299,9 +301,6 @@ function exportImage(mime) {
   img.onerror = () => { alert("image export failed"); URL.revokeObjectURL(url); };
   img.src = url;
 }
-
-document.getElementById("btn-export-png").addEventListener("click", () => exportImage("image/png"));
-document.getElementById("btn-export-jpg").addEventListener("click", () => exportImage("image/jpeg"));
 
 // keep the dirty label in sync when the filename changes while unsaved
 document.getElementById("export-name").addEventListener("input", () => {

@@ -1,6 +1,7 @@
 // main, wires model + editor + renderer + ui together and owns persistence
 
 import { createAutomaton } from "./model.js";
+import { toggleInitial, toggleFinal } from "./model.js";
 import { render, applyViewport } from "./renderer.js";
 import { createEditor } from "./editor.js";
 import { createUndo, pushUndo, undo } from "./undo.js";
@@ -42,12 +43,65 @@ function save() {
 function fullRender() {
   render(svg, auto, { selectedId: editor.ctx.selectedId, pendingFrom: editor.ctx.tools.pendingFrom });
   applyViewport(svg, editor.ctx.vp);
+  refreshStateActions();
+}
+
+// state actions row, only meaningful while a state is actually selected in move mode
+const stateActions = document.getElementById("state-actions");
+function refreshStateActions() {
+  const id = editor.ctx.selectedId;
+  const s = id === null ? null : auto.states.find(x => x.id === id);
+  const show = !!s && editor.ctx.toolName === "move";
+  stateActions.classList.toggle("hidden", !show);
+  if (s) {
+    document.getElementById("btn-initial").classList.toggle("on", s.initial);
+    document.getElementById("btn-final").classList.toggle("on", s.final);
+  }
+}
+
+function withSelected(run) {
+  const id = editor.ctx.selectedId;
+  if (id === null) return;
+  pushUndo(undoStack, auto);
+  run(id);
+  fullRender();
+  save();
+}
+
+document.getElementById("btn-initial").addEventListener("click", () => withSelected(id => toggleInitial(auto, id)));
+document.getElementById("btn-final").addEventListener("click", () => withSelected(id => toggleFinal(auto, id)));
+
+// rename flow, same popup pattern as the symbol input
+const renamePop = document.getElementById("rename-pop");
+const renameInput = document.getElementById("rename-input");
+
+document.getElementById("btn-rename").addEventListener("click", () => {
+  const s = auto.states.find(x => x.id === editor.ctx.selectedId);
+  if (!s) return;
+  renameInput.value = s.name;
+  renamePop.classList.remove("hidden");
+  renameInput.focus();
+  renameInput.select();
+});
+
+function closeRename(commit) {
+  const id = editor.ctx.selectedId;
+  const value = renameInput.value.trim();
+  renamePop.classList.add("hidden");
+  // empty names are rejected rather than silently blanking the label
+  if (commit && id !== null && value) {
+    withSelected(sid => {
+      const s = auto.states.find(x => x.id === sid);
+      if (s) s.name = value;
+    });
+  }
 }
 
 const editor = createEditor(svg, auto);
 
 editor.ctx.pushUndo = () => pushUndo(undoStack, auto);
 editor.ctx.render = () => { fullRender(); markDirty(); };
+editor.ctx.markDirty = markDirty;
 editor.ctx.save = save;
 editor.ctx.log = log;
 
@@ -143,8 +197,20 @@ document.getElementById("btn-export").addEventListener("click", () => {
   dirtyEl.classList.add("hidden");
 });
 
+document.getElementById("rename-ok").addEventListener("click", () => closeRename(true));
+document.getElementById("rename-cancel").addEventListener("click", () => closeRename(false));
+renameInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") closeRename(true);
+  if (e.key === "Escape") closeRename(false);
+});
+
 fullRender();
 log("boot, states " + auto.states.length);
+
+// service worker keeps the app usable offline in lectures
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(err => log("sw failed " + err.message)));
+}
 
 // test hook for the devtools agent, not used by the app itself
 window.__app = { get auto() { return auto; }, editor, jff };

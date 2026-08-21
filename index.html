@@ -39,7 +39,12 @@
 
 <div id="topbar">
   <label class="btn">import<input id="file-import" type="file" accept=".jff,.jflap,.xml" hidden></label>
-  <button id="btn-export" class="btn">export .jflap</button>
+  <input id="export-name" value="automaton" autocomplete="off" spellcheck="false" title="export filename without extension">
+  <select id="export-ext" title="export extension">
+    <option value=".jflap">.jflap</option>
+    <option value=".jff">.jff</option>
+  </select>
+  <button id="btn-export" class="btn">export</button>
   <span id="dirty" class="hidden">● unsaved</span>
 </div>
 

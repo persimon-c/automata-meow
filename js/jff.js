@@ -47,30 +47,30 @@ export function parse(text) {
 export function serialize(auto) {
   const type = auto.type || "fa";
   // built by string since xml comments and exact spacing do not need dom ceremony
-  let out = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
+  let out = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n";
   out += `<structure>\n\t<type>${type}</type>\n\t<automaton>\n`;
   if (type === "pda" && auto.initialStack) {
     out += `\t\t<initialStackSymbol>${esc(auto.initialStack)}</initialStackSymbol>\n`;
   }
-  out += '\t\t<!--The list of states.-->\n';
+  out += "\t\t<!--The list of states.-->\n";
   for (const s of auto.states) {
     out += `\t\t<state id="${s.id}" name="${esc(s.name)}">\n`;
     out += `\t\t\t<x>${s.x}</x>\n\t\t\t<y>${s.y}</y>\n`;
-    if (s.initial) out += '\t\t\t<initial/>\n';
-    if (s.final) out += '\t\t\t<final/>\n';
-    out += '\t\t</state>\n';
+    if (s.initial) out += "\t\t\t<initial/>\n";
+    if (s.final) out += "\t\t\t<final/>\n";
+    out += "\t\t</state>\n";
   }
-  out += '\t\t<!--The list of transitions.-->\n';
+  out += "\t\t<!--The list of transitions.-->\n";
   for (const t of auto.transitions) {
-    out += `\t\t<transition>\n`;
+    out += "\t\t<transition>\n";
     out += `\t\t\t<from>${t.from}</from>\n\t\t\t<to>${t.to}</to>\n\t\t\t<read>${esc(t.read)}</read>\n`;
     if (auto.type === "pda") {
       out += `\t\t\t<pop>${esc(t.pop ?? "")}</pop>\n`;
       out += `\t\t\t<push>${esc(t.push ?? "")}</push>\n`;
     }
-    out += `\t\t</transition>\n`;
+    out += "\t\t</transition>\n";
   }
-  out += '\t</automaton>\n</structure>\n';
+  out += "\t</automaton>\n</structure>\n";
   return out;
 }
 

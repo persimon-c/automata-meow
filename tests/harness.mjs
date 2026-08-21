@@ -82,8 +82,8 @@ test("pda fixture a^n b^n", () => {
 
 test("empty automaton", () => {
   const empty = { states: [{ id: 0, name: "q0", x: 0, y: 0, initial: true, final: true }], transitions: [] };
-  assert(simulate(empty, "").accepted === true, 'empty ""');
-  assert(simulate(empty, "a").accepted === false, 'empty "a"');
+  assert(simulate(empty, "").accepted === true, "empty \"\"");
+  assert(simulate(empty, "a").accepted === false, "empty \"a\"");
 });
 
 test("epsilon NFA", () => {
@@ -94,8 +94,8 @@ test("epsilon NFA", () => {
     ],
     transitions: [{ from: 0, to: 1, read: "" }],
   };
-  assert(simulate(eps, "").accepted === true, 'epsilon ""');
-  assert(simulate(eps, "a").accepted === false, 'epsilon "a"');
+  assert(simulate(eps, "").accepted === true, "epsilon \"\"");
+  assert(simulate(eps, "a").accepted === false, "epsilon \"a\"");
 });
 
 test("epsilon cycle does not loop forever", () => {

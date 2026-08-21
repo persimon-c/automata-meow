@@ -448,7 +448,7 @@ function exportImage(mime) {
     y = bbox.y - pad;
     w = bbox.width + 2 * pad;
     h = bbox.height + 2 * pad;
-  } catch (err) {
+  } catch {
     x = -100; y = -100; w = 400; h = 300;
   }
   const scale = 2; // crisp on retina
@@ -475,17 +475,17 @@ function exportImage(mime) {
   exportSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   const defs = svg.querySelector("defs").cloneNode(true);
   // marker arrow is light in the app, needs to be dark on a light/transparent export
-  defs.querySelectorAll('path[fill="#e8e8e8"]').forEach(p => p.setAttribute("fill", "#222222"));
+  defs.querySelectorAll("path[fill=\"#e8e8e8\"]").forEach(p => p.setAttribute("fill", "#222222"));
   exportSvg.appendChild(defs);
   for (const child of svg._root.children) exportSvg.appendChild(child.cloneNode(true));
   render(svg, auto, savedOpts);
   applyViewport(svg, editor.ctx.vp);
   // invert the dark-theme colors to dark-on-light for the exported image
-  exportSvg.querySelectorAll('circle[fill="#2a2a2a"]').forEach(c => c.setAttribute("fill", "#ffffff"));
-  exportSvg.querySelectorAll('circle[stroke="#e8e8e8"], line[stroke="#e8e8e8"]').forEach(el => el.setAttribute("stroke", "#222222"));
-  exportSvg.querySelectorAll('path[stroke="#cfcfcf"]').forEach(p => p.setAttribute("stroke", "#222222"));
-  exportSvg.querySelectorAll('text[fill="#e8e8e8"]').forEach(t => t.setAttribute("fill", "#111111"));
-  exportSvg.querySelectorAll('text[fill="#ffd27f"]').forEach(t => t.setAttribute("fill", "#8a5a00"));
+  exportSvg.querySelectorAll("circle[fill=\"#2a2a2a\"]").forEach(c => c.setAttribute("fill", "#ffffff"));
+  exportSvg.querySelectorAll("circle[stroke=\"#e8e8e8\"], line[stroke=\"#e8e8e8\"]").forEach(el => el.setAttribute("stroke", "#222222"));
+  exportSvg.querySelectorAll("path[stroke=\"#cfcfcf\"]").forEach(p => p.setAttribute("stroke", "#222222"));
+  exportSvg.querySelectorAll("text[fill=\"#e8e8e8\"]").forEach(t => t.setAttribute("fill", "#111111"));
+  exportSvg.querySelectorAll("text[fill=\"#ffd27f\"]").forEach(t => t.setAttribute("fill", "#8a5a00"));
   const svgStr = new XMLSerializer().serializeToString(exportSvg);
   const blob = new Blob([svgStr], { type: "image/svg+xml" });
   const url = URL.createObjectURL(blob);
@@ -511,7 +511,7 @@ function exportImage(mime) {
             });
             return;
           }
-        } catch (err) {}
+        } catch {}
       }
       doDownload();
     }, mime, mime === "image/jpeg" ? 0.92 : undefined);

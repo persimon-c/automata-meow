@@ -7,8 +7,9 @@ automata on the bus to class or presenting from a laptop, it works the same way.
 
 **Live:** <https://persimon-c.github.io/automata-meow/>
 
-Opens and saves **`.jff` / `.jflap` files** — the same XML format JFLAP uses for
-real coursework submissions.
+Opens and saves `.jff` / `.jflap` files — the same XML format JFLAP uses for real
+coursework submissions — and can also export the canvas as a **PNG** or **JPEG**
+image for slides or reports.
 
 ## Use it
 
@@ -26,8 +27,7 @@ python3 -m http.server 8123
 # open http://localhost:8123
 ```
 
-Add `?debug` to the URL for the on-screen event log. See `PLAN.md` for the
-roadmap: FA → PDA/CFG → Turing machines.
+Add `?debug` to the URL for the on-screen event log. Roadmap: FA → PDA/CFG → Turing machines.
 
 ## Layout
 

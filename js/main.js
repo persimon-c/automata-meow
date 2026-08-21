@@ -40,7 +40,14 @@ function log(msg) {
 }
 
 function markDirty() {
+  const name = document.getElementById("export-name")?.value.trim() || "automaton";
+  const ext = document.getElementById("export-ext")?.value || ".jflap";
+  dirtyEl.textContent = `${name}${ext} ● unsaved`;
   dirtyEl.classList.remove("hidden");
+}
+
+function clearDirty() {
+  dirtyEl.classList.add("hidden");
 }
 
 function save() {
@@ -183,6 +190,9 @@ document.getElementById("file-import").addEventListener("change", async e => {
     const parsed = jff.parse(text);
     auto.states = parsed.states;
     auto.transitions = parsed.transitions;
+    // adopt the imported filename as the export name, keep the chosen extension
+    const base = file.name.replace(/\.(jff|jflap|xml)$/i, "");
+    if (base) document.getElementById("export-name").value = base;
     fullRender();
     save();
     markDirty();
@@ -193,15 +203,40 @@ document.getElementById("file-import").addEventListener("change", async e => {
   e.target.value = "";
 });
 
-// export downloads a .jflap named file, the extension the handout asks for
-document.getElementById("btn-export").addEventListener("click", () => {
+// export downloads the chosen filename, plus share sheet on mobile when available
+document.getElementById("btn-export").addEventListener("click", async () => {
+  const name = document.getElementById("export-name").value.trim() || "automaton";
+  const ext = document.getElementById("export-ext").value || ".jflap";
+  const filename = name + ext;
   const blob = new Blob([jff.serialize(auto)], { type: "application/xml" });
+  // prefer the share sheet on phones when the browser can share files, falls back to download
+  if (navigator.canShare) {
+    const file = new File([blob], filename, { type: "application/xml" });
+    try {
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: filename });
+        clearDirty();
+        return;
+      }
+    } catch (err) {
+      // user cancelled the share sheet, still consider it saved
+      if (err.name === "AbortError") { clearDirty(); return; }
+    }
+  }
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "automaton.jflap";
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(a.href);
-  dirtyEl.classList.add("hidden");
+  clearDirty();
+});
+
+// keep the dirty label in sync when the filename changes while unsaved
+document.getElementById("export-name").addEventListener("input", () => {
+  if (!dirtyEl.classList.contains("hidden")) markDirty();
+});
+document.getElementById("export-ext").addEventListener("change", () => {
+  if (!dirtyEl.classList.contains("hidden")) markDirty();
 });
 
 document.getElementById("rename-ok").addEventListener("click", () => closeRename(true));

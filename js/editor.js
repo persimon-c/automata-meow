@@ -22,8 +22,6 @@ export function createEditor(svg, auto) {
   // preview lives directly under svg so it does not get wiped by renderer re-renders
   svg.appendChild(preview);
   function updatePreview(sp) {
-    const dbg = document.getElementById("debug");
-    if (dbg) dbg.textContent = `updPrev pending=${tools.pendingFrom} sp=${Math.round(sp.x)},${Math.round(sp.y)} vp=${vp.tx},${vp.ty}\n` + dbg.textContent;
     if (tools.pendingFrom === null) {
       preview.style.display = "none";
       return;

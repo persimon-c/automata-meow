@@ -151,6 +151,50 @@ html, body {
   border-radius: 6px;
 }
 
+#sim-bar {
+  position: fixed;
+  top: 50px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(30, 58, 95, 0.96);
+  border-bottom: 1px solid #4c8dff;
+  z-index: 5;
+}
+
+#sim-bar input {
+  flex: 1;
+  min-width: 80px;
+  font-size: 15px;
+  padding: 7px 8px;
+  background: #1b1b1b;
+  color: #e8e8e8;
+  border: 1px solid #4a4a4a;
+  border-radius: 6px;
+}
+
+#sim-bar button {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 14px;
+  background: #333;
+  color: #e8e8e8;
+  border: 1px solid #4a4a4a;
+  border-radius: 6px;
+}
+
+#sim-status.accept { color: #6fdc6f; font-weight: bold; }
+#sim-status.reject { color: #ff6b6b; font-weight: bold; }
+
+#btn-sim.active {
+  background: #1e3a5f;
+  border-color: #4c8dff;
+  color: #6fb3ff;
+}
+
 .hidden { display: none !important; }
 
 #symbol-pop {

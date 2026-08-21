@@ -35,6 +35,7 @@
   <button data-tool="link">+ trans</button>
   <button data-tool="delete">del</button>
   <button id="btn-undo">undo</button>
+  <button id="btn-sim">sim</button>
 </div>
 
 <div id="topbar">
@@ -48,6 +49,14 @@
   </select>
   <button id="btn-export" class="btn">export</button>
   <span id="dirty" class="hidden">● unsaved</span>
+</div>
+
+<div id="sim-bar" class="hidden">
+  <input id="sim-input" placeholder="test string" autocomplete="off" spellcheck="false">
+  <button id="sim-prev">◀</button>
+  <span id="sim-pos">0 / 0</span>
+  <button id="sim-next">▶</button>
+  <span id="sim-status"></span>
 </div>
 
 <!-- rename input for the selected state -->

@@ -163,6 +163,7 @@ function drawState(layer, s, opts) {
   g.dataset.sid = s.id;
   g.classList.add("state");
   const selected = opts.selectedId === s.id || opts.pendingFrom === s.id;
+  const active = opts.activeIds && opts.activeIds.has(s.id);
   if (s.initial) {
     // short stub arrow pointing into the state marks the start
     const arr = el("line");
@@ -180,9 +181,11 @@ function drawState(layer, s, opts) {
   c.setAttribute("cx", s.x);
   c.setAttribute("cy", s.y);
   c.setAttribute("r", R);
-  c.setAttribute("fill", "#2a2a2a");
-  c.setAttribute("stroke", selected ? "#4c8dff" : "#e8e8e8");
-  c.setAttribute("stroke-width", selected ? "3.5" : "2");
+  // active states during simulation glow blue, selected states get a blue ring
+  const isActive = active;
+  c.setAttribute("fill", isActive ? "#1e3a5f" : "#2a2a2a");
+  c.setAttribute("stroke", isActive ? "#4c8dff" : selected ? "#4c8dff" : "#e8e8e8");
+  c.setAttribute("stroke-width", isActive || selected ? "3.5" : "2");
   g.appendChild(c);
   if (s.final) {
     // accepting states get the classic double ring

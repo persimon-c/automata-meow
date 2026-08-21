@@ -6,6 +6,7 @@ import { render, applyViewport } from "./renderer.js";
 import { createEditor } from "./editor.js";
 import { createUndo, pushUndo, undo } from "./undo.js";
 import * as jff from "./jff.js";
+import { simulate } from "./engine.js";
 
 const STORAGE_KEY = "automata-meow:model";
 
@@ -30,6 +31,7 @@ try {
 }
 
 const undoStack = createUndo();
+let sim = null; // { input, steps, pos, accepted } while simulating, null otherwise
 
 // debug log stays quiet unless ?debug is in the url, phone bugs need on-screen logs
 const DEBUG = new URLSearchParams(location.search).has("debug");
@@ -55,9 +57,20 @@ function save() {
 }
 
 function fullRender() {
-  render(svg, auto, { selectedId: editor.ctx.selectedId, pendingFrom: editor.ctx.tools.pendingFrom });
+  // keep simulation in sync with the current automaton and input string
+  if (sim) {
+    const result = simulate(auto, simInputEl.value);
+    const keptPos = Math.min(sim.pos, result.steps.length - 1);
+    sim.steps = result.steps;
+    sim.accepted = result.accepted;
+    sim.input = simInputEl.value;
+    sim.pos = keptPos < 0 ? 0 : keptPos;
+  }
+  const activeIds = sim ? sim.steps[sim.pos]?.active : null;
+  render(svg, auto, { selectedId: editor.ctx.selectedId, pendingFrom: editor.ctx.tools.pendingFrom, activeIds });
   applyViewport(svg, editor.ctx.vp);
   refreshStateActions();
+  if (sim) updateSimBar();
 }
 
 // state actions row, only meaningful while a state is actually selected in move mode
@@ -118,6 +131,58 @@ editor.ctx.render = () => { fullRender(); markDirty(); };
 editor.ctx.markDirty = markDirty;
 editor.ctx.save = save;
 editor.ctx.log = log;
+
+const simBar = document.getElementById("sim-bar");
+const simInputEl = document.getElementById("sim-input");
+const simPosEl = document.getElementById("sim-pos");
+const simStatusEl = document.getElementById("sim-status");
+const simBtn = document.getElementById("btn-sim");
+
+function updateSimBar() {
+  if (!sim) return;
+  simPosEl.textContent = `${sim.pos} / ${sim.steps.length - 1}`;
+  simStatusEl.textContent = sim.accepted ? "accept" : "reject";
+  simStatusEl.className = sim.accepted ? "accept" : "reject";
+}
+
+function enterSim() {
+  const result = simulate(auto, simInputEl.value);
+  sim = { input: simInputEl.value, steps: result.steps, pos: result.steps.length - 1, accepted: result.accepted };
+  simBar.classList.remove("hidden");
+  simBtn.classList.add("active");
+  fullRender();
+}
+
+function exitSim() {
+  sim = null;
+  simBar.classList.add("hidden");
+  simBtn.classList.remove("active");
+  simStatusEl.textContent = "";
+  fullRender();
+}
+
+simBtn.addEventListener("click", () => {
+  if (sim) exitSim();
+  else enterSim();
+});
+
+simInputEl.addEventListener("input", () => {
+  if (!sim) return;
+  const result = simulate(auto, simInputEl.value);
+  sim = { input: simInputEl.value, steps: result.steps, pos: result.steps.length - 1, accepted: result.accepted };
+  fullRender();
+});
+
+document.getElementById("sim-prev").addEventListener("click", () => {
+  if (!sim || sim.pos <= 0) return;
+  sim.pos--;
+  fullRender();
+});
+document.getElementById("sim-next").addEventListener("click", () => {
+  if (!sim || sim.pos >= sim.steps.length - 1) return;
+  sim.pos++;
+  fullRender();
+});
 
 // symbol input flow for the link tool, empty input means epsilon
 const symPop = document.getElementById("symbol-pop");

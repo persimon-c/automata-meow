@@ -73,6 +73,25 @@ html, body {
 
 #dirty { color: #ffb347; font-size: 13px; }
 
+#export-name {
+  width: 110px;
+  font-size: 14px;
+  padding: 6px 8px;
+  background: #1b1b1b;
+  color: #e8e8e8;
+  border: 1px solid #4a4a4a;
+  border-radius: 6px;
+}
+
+#export-ext {
+  font-size: 14px;
+  padding: 6px;
+  background: #333;
+  color: #e8e8e8;
+  border: 1px solid #4a4a4a;
+  border-radius: 6px;
+}
+
 #state-actions {
   position: fixed;
   left: 50%;

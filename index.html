@@ -15,7 +15,14 @@
 <!-- symbol input for the transition tool, hidden until a from/to pair is picked -->
 <div id="symbol-pop" class="hidden">
   <span id="symbol-pair"></span>
-  <input id="symbol-input" autocomplete="off" placeholder="symbol (empty = ε)">
+  <div id="symbol-fa">
+    <input id="symbol-input" autocomplete="off" placeholder="symbol (empty = ε)">
+  </div>
+  <div id="symbol-pda" class="hidden">
+    <input id="pda-read" autocomplete="off" placeholder="read (empty=ε)">
+    <input id="pda-pop" autocomplete="off" placeholder="pop (empty=ε)">
+    <input id="pda-push" autocomplete="off" placeholder="push (empty=ε)">
+  </div>
   <button id="symbol-ok">add</button>
   <button id="symbol-cancel">cancel</button>
 </div>
@@ -47,6 +54,10 @@
     <option value=".png">.png</option>
     <option value=".jpg">.jpg</option>
   </select>
+  <select id="automaton-type" title="automaton type">
+    <option value="fa">FA</option>
+    <option value="pda">PDA</option>
+  </select>
   <button id="btn-export" class="btn">export</button>
   <span id="dirty" class="hidden">● unsaved</span>
 </div>
@@ -57,6 +68,7 @@
   <span id="sim-pos">0 / 0</span>
   <button id="sim-next">▶</button>
   <span id="sim-status"></span>
+  <span id="sim-stack"></span>
 </div>
 
 <!-- rename input for the selected state -->

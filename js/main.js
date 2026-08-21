@@ -133,10 +133,25 @@ editor.ctx.markDirty = markDirty;
 editor.ctx.save = save;
 editor.ctx.log = log;
 
+// automaton type selector, FA vs PDA, kept in sync with the model and the file import
+const typeSelect = document.getElementById("automaton-type");
+typeSelect.value = auto.type || "fa";
+typeSelect.addEventListener("change", () => {
+  const newType = typeSelect.value;
+  if (auto.type !== newType) {
+    pushUndo(undoStack, auto);
+    auto.type = newType;
+    fullRender();
+    save();
+    markDirty();
+  }
+});
+
 const simBar = document.getElementById("sim-bar");
 const simInputEl = document.getElementById("sim-input");
 const simPosEl = document.getElementById("sim-pos");
 const simStatusEl = document.getElementById("sim-status");
+const simStackEl = document.getElementById("sim-stack");
 const simBtn = document.getElementById("btn-sim");
 
 function updateSimBar() {
@@ -144,6 +159,17 @@ function updateSimBar() {
   simPosEl.textContent = `${sim.pos} / ${sim.steps.length - 1}`;
   simStatusEl.textContent = sim.accepted ? "accept" : "reject";
   simStatusEl.className = sim.accepted ? "accept" : "reject";
+  if (auto.type === "pda" && sim.steps[sim.pos]?.configs) {
+    const cfgs = sim.steps[sim.pos].configs;
+    if (cfgs.length > 0) {
+      const top = cfgs[0].stack.join("") || "ε";
+      simStackEl.textContent = `stack: ${top}`;
+    } else {
+      simStackEl.textContent = "stack: ∅";
+    }
+  } else if (simStackEl) {
+    simStackEl.textContent = "";
+  }
 }
 
 function enterSim() {
@@ -195,21 +221,39 @@ editor.ctx.askSymbol = (fromId, toId) => {
   const to = auto.states.find(s => s.id === toId);
   symPair.textContent = `${from ? from.name : "?"} → ${to ? to.name : "?"}`;
   symPop.classList.remove("hidden");
-  symInput.value = "";
-  symInput.focus();
-  symInput.dataset.from = fromId;
-  symInput.dataset.to = toId;
+  // show the right inputs for the current automaton type
+  const isPda = auto.type === "pda";
+  document.getElementById("symbol-fa").classList.toggle("hidden", isPda);
+  document.getElementById("symbol-pda").classList.toggle("hidden", !isPda);
+  if (isPda) {
+    document.getElementById("pda-read").value = "";
+    document.getElementById("pda-pop").value = "";
+    document.getElementById("pda-push").value = "";
+    document.getElementById("pda-read").focus();
+  } else {
+    symInput.value = "";
+    symInput.focus();
+  }
+  symPop.dataset.from = fromId;
+  symPop.dataset.to = toId;
 };
 
 function closeSymbol(commit) {
-  const from = parseInt(symInput.dataset.from, 10);
-  const to = parseInt(symInput.dataset.to, 10);
-  const read = symInput.value.trim();
+  const from = parseInt(symPop.dataset.from, 10);
+  const to = parseInt(symPop.dataset.to, 10);
   symPop.classList.add("hidden");
   if (commit && !Number.isNaN(from) && !Number.isNaN(to)) {
     pushUndo(undoStack, auto);
-    // empty read is epsilon, stored as the empty string exactly like jflap does
-    auto.transitions.push({ from, to, read });
+    if (auto.type === "pda") {
+      const read = document.getElementById("pda-read").value.trim();
+      const pop = document.getElementById("pda-pop").value.trim();
+      const push = document.getElementById("pda-push").value.trim();
+      auto.transitions.push({ from, to, read, pop, push });
+    } else {
+      const read = symInput.value.trim();
+      // empty read is epsilon, stored as the empty string exactly like jflap does
+      auto.transitions.push({ from, to, read });
+    }
     fullRender();
     save();
     markDirty();
@@ -223,6 +267,13 @@ document.getElementById("symbol-cancel").addEventListener("click", () => closeSy
 symInput.addEventListener("keydown", e => {
   if (e.key === "Enter") closeSymbol(true);
   if (e.key === "Escape") closeSymbol(false);
+});
+["pda-read", "pda-pop", "pda-push"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("keydown", e => {
+    if (e.key === "Enter") closeSymbol(true);
+    if (e.key === "Escape") closeSymbol(false);
+  });
 });
 
 // toolbar tool switching
@@ -254,6 +305,8 @@ document.getElementById("file-import").addEventListener("change", async e => {
     auto.states = [];
     auto.transitions = [];
     const parsed = jff.parse(text);
+    auto.type = parsed.type || "fa";
+    document.getElementById("automaton-type").value = auto.type;
     auto.states = parsed.states;
     auto.transitions = parsed.transitions;
     // adopt the imported filename as the export name, keep the chosen extension

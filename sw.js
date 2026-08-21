@@ -1,7 +1,10 @@
-// offline cache for lecture use, cache-first since the app is fully static
-// bump the cache version whenever shipped files change, old caches get deleted on activate
+// offline cache for lecture use
+// strategy: stale-while-revalidate — the cached copy answers instantly (fast on flaky wifi,
+// works offline), and a background network fetch refreshes the cache for the next load.
+// this means shipped-file changes self-heal without touching this file.
+// bump CACHE only when the ASSETS LIST itself changes (files added or removed).
 
-const CACHE = "automata-meow-v20";
+const CACHE = "automata-meow-v21";
 const ASSETS = [
   "./",
   "./index.html",
@@ -30,15 +33,31 @@ self.addEventListener("activate", e => {
   );
 });
 
-// serve from cache when possible, fall back to network and cache the result
+// one cache key per resource path, ignoring query strings, so /?debug and / share entries
 self.addEventListener("fetch", e => {
-  e.respondWith(
-    caches.match(e.request).then(hit =>
-      hit || fetch(e.request).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
-        return res;
-      })
-    )
-  );
+  const req = e.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+  const key = url.origin + url.pathname;
+  e.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(key);
+    // kick off the refresh immediately either way, it lands in the cache for next load
+    const network = fetch(req).then(res => {
+      if (res && res.status === 200) cache.put(key, res.clone());
+      return res;
+    });
+    if (cached) {
+      // keep the service worker alive until the background refresh settles
+      e.waitUntil(network.catch(() => {}));
+      return cached;
+    }
+    try {
+      return await network;
+    } catch {
+      // offline and never cached
+      return new Response("", { status: 504 });
+    }
+  })());
 });

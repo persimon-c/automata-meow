@@ -155,7 +155,9 @@ function selfLoopGeom(auto, t, index, total) {
   const shiftX = (index - (total - 1) / 2) * R * 1.4;
   const c = { x: s.x + shiftX, y: s.y - R * 2.8 };
   const d = `M ${p1.x} ${p1.y} Q ${c.x} ${c.y} ${p2.x} ${p2.y}`;
-  const label = { x: c.x, y: c.y - 10 };
+  // label hugs the visible top of the loop, the bezier apex sits well below the control point
+  const apexY = 0.25 * p1.y + 0.5 * c.y + 0.25 * p2.y;
+  const label = { x: c.x, y: apexY - 8 };
   return { d, label, samples: sampleQuad(p1, c, p2) };
 }
 

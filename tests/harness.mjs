@@ -111,3 +111,60 @@ test("epsilon cycle does not loop forever", () => {
   };
   assert(simulate(cyc, "").accepted === true, "epsilon cycle terminates");
 });
+
+// undo/redo semantics over the snapshot stacks, pure data so node covers it fully
+import { createUndo, pushUndo as snapPush, undo as snapUndo, redo as snapRedo } from "../js/undo.js";
+
+function modelOf(type, initialStack) {
+  return {
+    type,
+    ...(type === "pda" ? { initialStack } : {}),
+    states: [{ id: 0, name: "q0", x: 80, y: 80, initial: true, final: false }],
+    transitions: [],
+  };
+}
+
+test("undo restores the previous snapshot", () => {
+  const u = createUndo();
+  const auto = modelOf("fa");
+  snapPush(u, auto);
+  auto.states.push({ id: 1, name: "q1", x: 240, y: 80, initial: false, final: true });
+  assert(snapUndo(u, auto) === true, "undo should act");
+  assert(auto.states.length === 1, "state removed by undo");
+  assert(snapUndo(u, auto) === false, "undo on empty stack is a no-op");
+});
+
+test("redo re-applies what undo removed", () => {
+  const u = createUndo();
+  const auto = modelOf("fa");
+  snapPush(u, auto);
+  auto.states.push({ id: 1, name: "q1", x: 240, y: 80, initial: false, final: true });
+  snapUndo(u, auto);
+  assert(snapRedo(u, auto) === true, "redo should act");
+  assert(auto.states.length === 2, "state restored by redo");
+  assert(snapRedo(u, auto) === false, "redo on empty stack is a no-op");
+});
+
+test("a fresh push invalidates the redo branch", () => {
+  const u = createUndo();
+  const auto = modelOf("fa");
+  snapPush(u, auto);
+  auto.states.push({ id: 1, name: "q1", x: 240, y: 80, initial: false, final: false });
+  snapUndo(u, auto);
+  auto.states[0].name = "renamed";
+  snapPush(u, auto);
+  assert(snapRedo(u, auto) === false, "redo must be dead after a fork");
+});
+
+test("undoing a fa/pda type switch really switches back", () => {
+  const u = createUndo();
+  const auto = modelOf("fa");
+  snapPush(u, auto);
+  auto.type = "pda";
+  auto.initialStack = "Z";
+  snapUndo(u, auto);
+  assert(auto.type === "fa", "type restored");
+  assert(auto.initialStack === undefined, "initialStack dropped again");
+  snapRedo(u, auto);
+  assert(auto.type === "pda" && auto.initialStack === "Z", "redo brings pda fields back");
+});

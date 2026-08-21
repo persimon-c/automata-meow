@@ -36,7 +36,8 @@ export function createEditor(svg, auto) {
   }
 
   svg.addEventListener("pointerdown", e => {
-    svg.setPointerCapture(e.pointerId);
+    // capture can throw for synthetic or already-gone pointers, losing the gesture over it is silly
+    try { svg.setPointerCapture(e.pointerId); } catch (err) {}
     const sp = localPt(e);
     pointers.set(e.pointerId, sp);
     if (pointers.size === 2) {

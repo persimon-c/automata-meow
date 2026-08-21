@@ -3,7 +3,7 @@
 // pop and push are only meaningful for pda, empty string means no stack operation
 
 export function createAutomaton(type = "fa") {
-  return { type, states: [], transitions: [] };
+  return { type, initialStack: type === "pda" ? "Z" : undefined, states: [], transitions: [] };
 }
 
 // next free numeric id, derived from existing ids so imports never collide

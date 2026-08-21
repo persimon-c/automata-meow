@@ -39,7 +39,9 @@ export function parse(text) {
     transitions.push(base);
   }
 
-  return { type, states, transitions };
+  const initialStack = type === "pda" ? (automaton.querySelector("initialStackSymbol")?.textContent ?? "Z") : undefined;
+
+  return { type, initialStack, states, transitions };
 }
 
 export function serialize(auto) {
@@ -47,6 +49,9 @@ export function serialize(auto) {
   // built by string since xml comments and exact spacing do not need dom ceremony
   let out = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
   out += `<structure>\n\t<type>${type}</type>\n\t<automaton>\n`;
+  if (type === "pda" && auto.initialStack) {
+    out += `\t\t<initialStackSymbol>${esc(auto.initialStack)}</initialStackSymbol>\n`;
+  }
   out += '\t\t<!--The list of states.-->\n';
   for (const s of auto.states) {
     out += `\t\t<state id="${s.id}" name="${esc(s.name)}">\n`;

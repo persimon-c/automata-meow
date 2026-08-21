@@ -162,12 +162,31 @@ editor.ctx.log = log;
 
 // automaton type selector, FA vs PDA, kept in sync with the model and the file import
 const typeSelect = document.getElementById("automaton-type");
+const initialStackInput = document.getElementById("initial-stack");
 typeSelect.value = auto.type || "fa";
+function updateInitialStackVisibility() {
+  const isPda = auto.type === "pda";
+  initialStackInput.style.display = isPda ? "" : "none";
+  if (isPda) initialStackInput.value = auto.initialStack || "Z";
+}
+updateInitialStackVisibility();
 typeSelect.addEventListener("change", () => {
   const newType = typeSelect.value;
   if (auto.type !== newType) {
     pushUndo(undoStack, auto);
     auto.type = newType;
+    if (newType === "pda" && !auto.initialStack) auto.initialStack = "Z";
+    updateInitialStackVisibility();
+    fullRender();
+    save();
+    markDirty();
+  }
+});
+initialStackInput.addEventListener("input", () => {
+  const val = initialStackInput.value.trim() || "Z";
+  if (auto.initialStack !== val) {
+    pushUndo(undoStack, auto);
+    auto.initialStack = val;
     fullRender();
     save();
     markDirty();
@@ -188,11 +207,14 @@ function updateSimBar() {
   simStatusEl.className = sim.accepted ? "accept" : "reject";
   if (auto.type === "pda" && sim.steps[sim.pos]?.configs) {
     const cfgs = sim.steps[sim.pos].configs;
-    if (cfgs.length > 0) {
-      const top = cfgs[0].stack.join("") || "ε";
-      simStackEl.textContent = `stack: ${top}`;
-    } else {
+    if (cfgs.length === 0) {
       simStackEl.textContent = "stack: ∅";
+    } else if (cfgs.length === 1) {
+      simStackEl.textContent = `stack: ${cfgs[0].stack.join("") || "ε"}`;
+    } else {
+      const stacks = cfgs.slice(0, 3).map(c => c.stack.join("") || "ε").join(" | ");
+      const more = cfgs.length > 3 ? ` +${cfgs.length - 3} more` : "";
+      simStackEl.textContent = `stacks: ${stacks}${more}`;
     }
   } else if (simStackEl) {
     simStackEl.textContent = "";
@@ -333,7 +355,10 @@ document.getElementById("file-import").addEventListener("change", async e => {
     auto.transitions = [];
     const parsed = jff.parse(text);
     auto.type = parsed.type || "fa";
+    auto.initialStack = parsed.initialStack || (parsed.type === "pda" ? "Z" : undefined);
     document.getElementById("automaton-type").value = auto.type;
+    document.getElementById("initial-stack").value = auto.initialStack || "Z";
+    updateInitialStackVisibility();
     auto.states = parsed.states;
     auto.transitions = parsed.transitions;
     // adopt the imported filename as the export name, keep the chosen extension

@@ -8,7 +8,10 @@ const EDGE_SPACING = 40; // perpendicular gap between parallel edges
 
 // build the full svg content fresh each call, tiny automata make this cheap
 export function render(svg, auto, opts) {
+  // keep the link preview line across re-renders, it lives directly under <svg>
+  const preview = svg.querySelector("#preview-line");
   svg.innerHTML = "";
+  if (preview) svg.appendChild(preview);
   const defs = el("defs");
   defs.innerHTML =
     '<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
@@ -96,8 +99,10 @@ function edgeGeom(auto, t, index, total) {
   const d = `M ${p1.x} ${p1.y} Q ${c.x} ${c.y} ${p2.x} ${p2.y}`;
   // quadratic bezier midpoint for the label, offset farther from the line so symbols don't sit on it
   // push the label to the same side the curve bows toward, so it sits outside the arc
+  // pda labels are longer ("a, Z → AZ"), so give them a bit more breathing room
+  const baseOff = auto.type === "pda" ? 18 : 14;
   const mid = { x: 0.25 * p1.x + 0.5 * c.x + 0.25 * p2.x, y: 0.25 * p1.y + 0.5 * c.y + 0.25 * p2.y };
-  const off = k === 0 ? 14 : Math.sign(k) * 14;
+  const off = k === 0 ? baseOff : Math.sign(k) * baseOff;
   const label = { x: mid.x + nx * off, y: mid.y + ny * off };
   return { d, label, samples: sampleQuad(p1, c, p2) };
 }

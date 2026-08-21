@@ -1,14 +1,14 @@
 # automata-meow
 
-A touch-first web editor for finite automata and pushdown automata — built because
+A touch-first web editor for finite automata and pushdown automata. Built because
 JFLAP is a Java desktop app and every web clone assumes a mouse. Designed to be used
 on a phone, during an actual lecture, on spotty wifi. Whether you're drawing
 automata on the bus to class or presenting from a laptop, it works the same way.
 
 **Live:** <https://persimon-c.github.io/automata-meow/>
 
-Opens and saves `.jff` / `.jflap` files — the same XML format JFLAP uses for real
-coursework submissions — and can also export the canvas as a **PNG** or **JPEG**
+Opens and saves `.jff` / `.jflap` files, the same XML format JFLAP uses for real
+coursework submissions, and can also export the canvas as a **PNG** or **JPEG**
 image for slides or reports.
 
 ## Use it
@@ -43,5 +43,5 @@ js/main.js      wiring, toolbar, persistence
 
 ## License
 
-MIT. Not affiliated with JFLAP or Duke University; this is an independent tool
+MIT. Not affiliated with JFLAP or Duke University. This is an independent tool
 that reads and writes the same file format.
